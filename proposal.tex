@@ -1,47 +1,101 @@
 \documentclass[11pt]{article}
-%Gummi|065|=)
-\title{\textbf{Proposal}}
+
+\title{\textbf{Object Detection in an Image}}
 \author{Bruno de Almeida Silveira}
 \date{October 2019}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{indentfirst}
+
+\usepackage{booktabs}
+\usepackage[table,xcdraw]{xcolor}
+
+\usepackage{adjustbox}
+\usepackage{lipsum}
+\usepackage{caption}
+
+\usepackage{amsmath}
+
 \begin{document}
 
 \maketitle
 
 \section{Domain Background}
 
-(approx. 1-2 paragraphs)
+In 2016, Google released its first dataset with more than one object annotated by image \cite{google:1}, OpenImagesV1, which has around 1GB of images. This dataset was created and annotated by Google Inc under the CC BY 4.0 license.  In May of 2019, Google released a new version of this dataset \cite{google:2}, the fifth version, with a new Kaggle competition \cite{kaggle}, which was the inspiration for this project.
 
-In this section, provide brief details on the background information of the domain from which the project is proposed. Historical information relevant to the project should be included. It should be clear how or why a problem in the domain can or should be solved. Related academic research should be appropriately cited in this section, including why that research is relevant. Additionally, a discussion of your personal motivation for investigating a particular problem in the domain is encouraged but not required.
+The problem of Object Detection in an image has some research on it, such as \cite{intro:1}, \cite{intro:2}, \cite{intro:3}, and \cite{intro:4}. A proper Object Detection model is the start of any image model recognition problem. So, this project intends to face it considering fundamental research for anyone who wants to work with images.
+
 
 \section{Problem Statement}
 
-(approx. 1 paragraph)
+The main challenge of this project is to create a model that identify and classifies all objects in a image.
 
-In this section, clearly describe the problem that is to be solved. The problem described should be well defined and should have at least one relevant potential solution. Additionally, describe the problem thoroughly such that it is clear that the problem is quantifiable (the problem can be expressed in mathematical or logical terms) , measurable (the problem can be measured by some metric and clearly observed), and replicable (the problem can be reproduced and occurs more than once).
+The project intends to classify objects from 500 different classes correctly, and it is measured based on how many classes previously labeled it correctly predicts.
+
+Like any classifier, it can be modeled as a Logistic Regression, some Support Vector Classifier (SVC) with some kernel, or a Neural Network. To this scope, Neural Networks are more applicable as a solution, even more, Deep Learning models.
+
+This problem has many practical instances, like identifying objects in security footage; labeling a massive amount of photos automatically; automatically create a catalog for a retail company.
 
 \section{Datasets and Inputs}
 
-(approx. 2-3 paragraphs)
+The dataset used in this project is the same dataset provided in the Kaggle competition created by Google \cite{kaggle}. Google created the dataset labeling manually more than 14.6 million of bounding boxes among 1.7 million images. Dataset is composed of a zip file with all images, a CSV that contains the position of each bounding box in each image and its class identifier, another CSV that maps each class identifier with a semantic class name, and a JSON file with the full hierarchical classes defined.
 
-In this section, the dataset(s) and/or input(s) being considered for the project should be thoroughly described, such as how they relate to the problem and why they should be used. Information such as how the dataset or input is (was) obtained, and the characteristics of the dataset or input, should be included with relevant references and citations as necessary It should be clear how the dataset(s) or input(s) will be used in the project and whether their use is appropriate given the context of the problem.
+Google also divided the whole dataset using some stratified strategy to preserve the proportions of each class. More details could be found in the \cite{imgdataset}, the following table describes the division proposed.
+
+\begin{table}[ht]
+	\centering
+	\caption{ Dataset division provided by Google }
+	\label{table1}
+	\begin{tabular}{@{}p{3cm}p{2cm}p{2cm}p{2cm}p{1.5cm}@{}}
+		\rowcolor[HTML]{EFEFEF}
+		& \multicolumn{1}{l}{\cellcolor[HTML]{EFEFEF}Train} & \multicolumn{1}{l}{\cellcolor[HTML]{EFEFEF}Validation} & \multicolumn{1}{l}{\cellcolor[HTML]{EFEFEF}Test} & \multicolumn{1}{l}{\cellcolor[HTML]{EFEFEF}Classes} \\
+		Images & 1,743,042                                         & 41,620                                                 & 125,436                                          & -                                                      \\
+		Boxes  & 14,610,229                                        & 303,980                                                & 937,327                                          & 600                                                    \\
+	\end{tabular}
+\end{table}
+
+
 
 \section{Solution Statement}
 
-(approx. 1 paragraph)
-
-In this section, clearly describe a solution to the problem. The solution should be applicable to the project domain and appropriate for the dataset(s) or input(s) given. Additionally, describe the solution thoroughly such that it is clear that the solution is quantifiable (the solution can be expressed in mathematical or logical terms) , measurable (the solution can be measured by some metric and clearly observed), and replicable (the solution can be reproduced and occurs more than once).
+To solve the problem this project is going to use deep learning models, and it is going to use some transfer learning techniques in the state of the art of the Convolutional Neural Networks (CNNs) already designed \cite{cnns}, such as ResNet-N layers \cite{resnet}, Inception-V4 \cite{inception}, Xception \cite{xception} and Inception-ResNets \cite{inception}. The project is going to compare them with a couple of models tailored for this project, and see how all of them perform.
 
 \section{Benchmark Model}
 
-(approximately 1-2 paragraphs)
-
-In this section, provide the details for a benchmark model or result that relates to the domain, problem statement, and intended solution. Ideally, the benchmark model or result contextualizes existing methods or known information in the domain and problem given, which could then be objectively compared to the solution. Describe how the benchmark model or result is measurable (can be measured by some metric and clearly observed) with thorough detail.
+The benchmark models for this project are going to be the models created for Google's Kaggle competition \cite{kaggle}. So, the Leaderboard itself is going to be used as a benchmark \cite{leaderboard}. The top five achieve scores are 0.65887, 0.65337, 0.64214. 0.62221, and 0.60406.
 
 \section{Evaluation Metrics}
 
-(approx. 1-2 paragraphs)
+The metric proposed by Google in the competition is the mean Average Precision (mAP) \cite{map}.
 
-In this section, propose at least one evaluation metric that can be used to quantify the performance of both the benchmark model and the solution model. The evaluation metric(s) you propose should be appropriate given the context of the data, the problem statement, and the intended solution. Describe how the evaluation metric(s) are derived and provide an example of their mathematical representations (if applicable). Complex evaluation metrics should be clearly defined and quantifiable (can be expressed in mathematical or logical terms).
+
+{\centering
+	\begin{equation*}
+	mAP = \frac{\sum\limits_{c=1}^{C}AP_c} {C}
+	\end{equation*}
+	\begin{equation*}
+	AP = \frac{\sum\limits_{i=1}^{Q}\sum\limits_{k=1}^{M}(P(k)*\Delta r(k))} {Q}
+	\end{equation*}}
+where:
+
+$C$ value is the number of all categories (classes),
+
+
+
+{\centering
+\begin{equation*}
+mAP = \frac{\sum\limits_{q=1}^{Q}AP_q} {Q}
+\end{equation*}
+\begin{equation*}
+AP = \frac{\sum\limits_{i=1}^{Q}\sum\limits_{k=1}^{M}(P(k)*\Delta r(k))} {Q}
+\end{equation*}}
+where:
+
+$C$ value is the number of queries,
+
+	
+
 
 \section{Project Design}
 
@@ -49,5 +103,6 @@ In this section, propose at least one evaluation metric that can be used to quan
 
 In this final section, summarize a theoretical workflow for approaching a solution given the problem. Provide thorough discussion for what strategies you may consider employing, what analysis of the data might be required before being used, or which algorithms will be considered for your implementation. The workflow and discussion that you provide should align with the qualities of the previous sections. Additionally, you are encouraged to include small visualizations, pseudocode, or diagrams to aid in describing the project design, but it is not required. The discussion should clearly outline your intended workflow of the capstone project.
 
-
+\bibliographystyle{unsrt}
+\bibliography{references.bib}{}
 \end{document}
