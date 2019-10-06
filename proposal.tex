@@ -3,6 +3,7 @@
 \title{\textbf{Object Detection in an Image}}
 \author{Bruno de Almeida Silveira}
 \date{October 2019}
+
 \usepackage{url}
 \usepackage{hyperref}
 \usepackage{indentfirst}
@@ -16,6 +17,9 @@
 
 \usepackage{amsmath}
 
+\usepackage{graphicx}
+
+\graphicspath{ {./images-proposal/} }
 \begin{document}
 
 \maketitle
@@ -33,13 +37,13 @@ The main challenge of this project is to create a model that identify and classi
 
 The project intends to classify objects from 500 different classes correctly, and it is measured based on how many classes previously labeled it correctly predicts.
 
-Like any classifier, it can be modeled as a Logistic Regression, some Support Vector Classifier (SVC) with some kernel, or a Neural Network. To this scope, Neural Networks are more applicable as a solution, even more, Deep Learning models.
+Like any classifier, it can be modeled as a Logistic Regression, some Support Vector Classifier (SVC) with some kernel, a Neural Network, among many other possible models. To this scope, Neural Networks are more applicable as a solution, even more, Deep Learning models.
 
-This problem has many practical instances, like identifying objects in security footage; labeling a massive amount of photos automatically; automatically create a catalog for a retail company.
+This problem has many practical instances, like identifying objects in security footage; labeling a massive amount of photos automatically; automatically create a catalog for a retail company; and so many others.
 
 \section{Datasets and Inputs}
 
-The dataset used in this project is the same dataset provided in the Kaggle competition created by Google \cite{kaggle}. Google created the dataset labeling manually more than 14.6 million of bounding boxes among 1.7 million images. Dataset is composed of a zip file with all images, a CSV that contains the position of each bounding box in each image and its class identifier, another CSV that maps each class identifier with a semantic class name, and a JSON file with the full hierarchical classes defined.
+The dataset used in this project is the same dataset provided in the Kaggle competition created by Google \cite{kaggle}. Google created the dataset labeling manually around 15 million of bounding boxes among 1.7 million images. Dataset is composed of a zip file with all images, a CSV that contains the position of each bounding box in each image and its class identifier, another CSV that maps each class identifier with a semantic class name, and a JSON file with the full hierarchical classes defined.
 
 Google also divided the whole dataset using some stratified strategy to preserve the proportions of each class. More details could be found in the \cite{imgdataset}, the following table describes the division proposed.
 
@@ -59,7 +63,7 @@ Google also divided the whole dataset using some stratified strategy to preserve
 
 \section{Solution Statement}
 
-To solve the problem this project is going to use deep learning models, and it is going to use some transfer learning techniques in the state of the art of the Convolutional Neural Networks (CNNs) already designed \cite{cnns}, such as ResNet-N layers \cite{resnet}, Inception-V4 \cite{inception}, Xception \cite{xception} and Inception-ResNets \cite{inception}. The project is going to compare them with a couple of models tailored for this project, and see how all of them perform.
+To solve the problem, this project is going to use deep learning models, and it is going to use some transfer learning techniques in the state of the art of the Convolutional Neural Networks (CNNs) already designed \cite{cnns}, such as ResNet-N layers \cite{resnet}, Inception-V4 \cite{inception}, Xception \cite{xception} and Inception-ResNets \cite{inception}. The project is going to compare them with a couple of models tailored for this project, and see how all of them perform.
 
 \section{Benchmark Model}
 
@@ -67,35 +71,68 @@ The benchmark models for this project are going to be the models created for Goo
 
 \section{Evaluation Metrics}
 
-The metric proposed by Google in the competition is the mean Average Precision (mAP) \cite{map}.
+The metric proposed by Google in the competition is the mean Average Precision (mAP) \cite{map}, a very didactic explanation about the metric could be found in here \cite{medium:1} and \cite{medium:2}.
 
+The mAP metric could be defined as:
 
 {\centering
 	\begin{equation*}
 	mAP = \frac{\sum\limits_{c=1}^{C}AP_c} {C}
-	\end{equation*}
-	\begin{equation*}
-	AP = \frac{\sum\limits_{i=1}^{Q}\sum\limits_{k=1}^{M}(P(k)*\Delta r(k))} {Q}
 	\end{equation*}}
-where:
+where $C$ value is the number of all categories (classes).
 
-$C$ value is the number of all categories (classes),
+To understand $AP_c$, it must comprehend first what is $IoU$. $IoU$ is the Intersection over Union, and it is equal to the ratio of the area of intersection and area of the union of the predicted bounding box (created by the model) and Ground-truth bounding box (previously annotated).
 
+\begin{figure}[ht]
+	
+	\centering
+	\includegraphics[width=0.6\textwidth]{iou_stop_sign.jpg}
+	\caption{\scriptsize  Difference between a predict bounding box with a Ground-truth bouding box \cite{pyimage}}
+	
+\end{figure}
 
+\begin{figure}[ht]
+	
+	\centering
+	\includegraphics[width=0.45\textwidth]{iou_equation.png}
+	\caption{\scriptsize IoU visual represented \cite{pyimage}}
+	
+\end{figure}
+
+Here, it is going to define:
 
 {\centering
-\begin{equation*}
-mAP = \frac{\sum\limits_{q=1}^{Q}AP_q} {Q}
-\end{equation*}
-\begin{equation*}
-AP = \frac{\sum\limits_{i=1}^{Q}\sum\limits_{k=1}^{M}(P(k)*\Delta r(k))} {Q}
-\end{equation*}}
-where:
+	\begin{equation*}
+	TruePositive\ \dot=\ IoU > 0.5
+	\end{equation*}
+	\begin{equation*}
+	FalsePositive\ \dot=\ IoU < 0.5\ or \ Duplicated PredictBoundingBox
+	\end{equation*}
+	\begin{equation*}
+	FalseNegative\ \dot=\ IoU > 0.5\ and \ WrongClassification
+	\end{equation*}}
 
-$C$ value is the number of queries,
+With TP, TN, and FP defined, it is possible to create a Precision-Recall Curve, which defines a function that gives a precision based on the recall.
 
+\begin{figure}[ht]
 	
+	\centering
+	\includegraphics[width=0.7\textwidth]{precision-recall.png}
+	\caption{\scriptsize Precision-Recall curve \cite{medium:1}}
+	
+\end{figure}
 
+
+So by definition, $AP_c$ (Average Precision of some category c), is defined as an Area Under the Curve ($AUC$) of the Precision-Recall curve.
+=
+{\centering
+\begin{equation*}
+AP_c = \int_{0}^{1} p(r) dr
+\end{equation*}
+where $p(r)$ is the precision defined in function of recall.}
+
+
+It is essential to retain that in this project it is going to be used $AP_{50}$ (which use a threshold of 0.5 in $IoU$ to define $TP$), but other metrics could be evaluated, like, $AP_{75}$ (with $IoU$ threshold of 0.75) or $AP_{90}$ (with $IoU$ threshold of 0.90).
 
 \section{Project Design}
 
