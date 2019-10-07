@@ -112,7 +112,7 @@ With TP, TN, and FP defined, it is possible to create a Precision-Recall Curve, 
 \begin{figure}[ht]
 	
 	\centering
-	\includegraphics[width=0.5\textwidth]{precision-recall.png}
+	\includegraphics[width=.5\textwidth]{precision-recall.png}
 	\caption{\scriptsize Precision-Recall curve \cite{medium:1}}
 	
 \end{figure}
@@ -129,9 +129,29 @@ It is essential to retain that in this project it is going to be used $AP_{50}$ 
 
 \section{Project Design}
 
-(approx. 1 page)
+This project is going to divide the problem itself into two, the problem to create the correct bounding box and the problem to classify it. The idea is to create a simple pipeline with two models concatenated, and each model is going to optimize each technique.
 
-In this final section, summarize a theoretical workflow for approaching a solution given the problem. Provide thorough discussion for what strategies you may consider employing, what analysis of the data might be required before being used, or which algorithms will be considered for your implementation. The workflow and discussion that you provide should align with the qualities of the previous sections. Additionally, you are encouraged to include small visualizations, pseudocode, or diagrams to aid in describing the project design, but it is not required. The discussion should clearly outline your intended workflow of the capstone project.
+The first model, called Bounding Box Identifier, is responsible for identifying all objects that could be classified by the Image Classifier Model. The loss function of this model is going to be the IoU (described in the previous section).
+
+On the other side, for the Image Classifier model, it is going to use the Categorial Crossentropy as a loss function.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=.55\textwidth]{proposal-udacity.jpg}
+	\caption{\scriptsize High level Model Pipeline}
+\end{figure}
+
+It is import to explaining more about the loss functions. 
+
+The Categorical Crossentropy used in the Classifier model is straightforward since it is a multiclass classifier. The idea is to compare for each class each distribution of the predictions made with the labeled distribution.
+
+The IoU metric used as loss function arrives because mAP derives directly from the IoU. Since the mAP is going to be used as a metric to compare all models, it sounds reasonable to use IoU as a loss function to be optimized in the model responsible for creating the Bounding Boxes.
+
+In the first step, the project starts to using Transfer Learning technique in many famous networks, for both models, Object Identification, and Classifier. With Transfer Learning, we expect to achieve some reasonable results.
+
+For the second and final step of the project, this work proposes to create, at minimum, one new architecture that could face other architectures seen above. It is not defined yet if this new architecture is going to be for Object Identification problem, for the Classifier problem, or both. Yet, it is sounds challenge and aspirational.
+
+ 
 
 \bibliographystyle{unsrt}
 \bibliography{references.bib}{}
