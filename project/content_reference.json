@@ -1,0 +1,40 @@
+{
+  "METADATA": [
+    "https://storage.googleapis.com/openimages/challenge_2019/challenge-2019-classes-description-500.csv",
+    "https://storage.googleapis.com/openimages/challenge_2019/challenge-2019-label500-hierarchy.json"
+  ],
+  "TRAIN": [
+    "https://storage.googleapis.com/openimages/v5/train-annotations-human-imagelabels-boxable.csv",
+    "https://storage.googleapis.com/openimages/2018_04/train/train-annotations-bbox.csv",
+    "https://storage.googleapis.com/openimages/challenge_2019/challenge-2019-train-detection-human-imagelabels.csv",
+    "https://storage.googleapis.com/openimages/challenge_2019/challenge-2019-train-detection-bbox.csv",
+    "https://s3.amazonaws.com/open-images-dataset/tar/train_0.tar.gz",
+    "https://s3.amazonaws.com/open-images-dataset/tar/train_1.tar.gz",
+    "https://s3.amazonaws.com/open-images-dataset/tar/train_2.tar.gz",
+    "https://s3.amazonaws.com/open-images-dataset/tar/train_3.tar.gz",
+    "https://s3.amazonaws.com/open-images-dataset/tar/train_4.tar.gz",
+    "https://s3.amazonaws.com/open-images-dataset/tar/train_5.tar.gz",
+    "https://s3.amazonaws.com/open-images-dataset/tar/train_6.tar.gz",
+    "https://s3.amazonaws.com/open-images-dataset/tar/train_7.tar.gz",
+    "https://s3.amazonaws.com/open-images-dataset/tar/train_8.tar.gz",
+    "https://s3.amazonaws.com/open-images-dataset/tar/train_9.tar.gz",
+    "https://s3.amazonaws.com/open-images-dataset/tar/train_a.tar.gz",
+    "https://s3.amazonaws.com/open-images-dataset/tar/train_b.tar.gz",
+    "https://s3.amazonaws.com/open-images-dataset/tar/train_c.tar.gz",
+    "https://s3.amazonaws.com/open-images-dataset/tar/train_d.tar.gz",
+    "https://s3.amazonaws.com/open-images-dataset/tar/train_e.tar.gz",
+    "https://s3.amazonaws.com/open-images-dataset/tar/train_f.tar.gz"
+  ],
+  "VALIDATION": [
+    "https://storage.googleapis.com/openimages/v5/validation-annotations-human-imagelabels-boxable.csv",
+    "https://storage.googleapis.com/openimages/v5/validation-annotations-bbox.csv",
+    "https://storage.googleapis.com/openimages/challenge_2019/challenge-2019-validation-detection-human-imagelabels.csv",
+    "https://storage.googleapis.com/openimages/challenge_2019/challenge-2019-validation-detection-bbox.csv",
+    "https://s3.amazonaws.com/open-images-dataset/tar/validation.tar.gz"
+  ],
+  "TEST": [
+    "https://storage.googleapis.com/openimages/v5/test-annotations-human-imagelabels-boxable.csv",
+    "https://storage.googleapis.com/openimages/v5/test-annotations-bbox.csv",
+    "https://s3.amazonaws.com/open-images-dataset/tar/test.tar.gz"
+  ]
+}

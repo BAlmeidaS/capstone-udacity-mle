@@ -6,20 +6,18 @@ Example:
     ...
 """
 
+import json
 import os
 import requests
 import shutil
 
 from tqdm import tqdm
 
-DATASETS_URLS = ['https://storage.googleapis.com/openimages/challenge_2019/challenge-2019-train-detection-human-imagelabels.csv',
-                 'https://storage.googleapis.com/openimages/challenge_2019/challenge-2019-train-detection-bbox.csv',
-                 'https://storage.googleapis.com/openimages/challenge_2019/challenge-2019-validation-detection-human-imagelabels.csv',
-                 'https://storage.googleapis.com/openimages/challenge_2019/challenge-2019-validation-detection-bbox.csv',
-                 'https://storage.googleapis.com/openimages/challenge_2019/challenge-2019-classes-description-500.csv',
-                 'https://storage.googleapis.com/openimages/challenge_2019/challenge-2019-label500-hierarchy.json']
+with open('content_reference.json') as f:
+    CONTENT = json.load(f)
 
-ROOTPATH = os.path.dirname(os.path.relpath(__file__))
+ROOTPATH = os.path.join(os.path.dirname(os.path.relpath(__file__)),
+                        'data')
 
 
 def create_data_folder(folder: str):
@@ -31,7 +29,7 @@ def create_data_folder(folder: str):
     Raises:
         SystemExit: If user opts to not delete folder
     """
-    path = os.path.join(ROOTPATH, 'data', folder)
+    path = os.path.join(ROOTPATH, folder)
 
     if os.path.exists(path):
         if get_input(f'{path} ALREADY EXIST!\nDo you want to delete? '):
@@ -70,11 +68,12 @@ def download(url: str, folder: str):
     block_size = 1024
 
     # the path for save file - using data folder
-    path = os.path.join(ROOTPATH, 'data', folder)
+    path = os.path.join(ROOTPATH, folder)
 
     # the filename get from request
     filename = get_filename(url)
 
+    # fullpath for the file
     fullpath = os.path.join(path, filename)
 
     t = tqdm(total=total_size, unit='iB', unit_scale=True, desc=filename, leave=False)
@@ -88,16 +87,15 @@ def download(url: str, folder: str):
         RuntimeError(f"ERROR DURING DOWNLOAD {url}")
 
 
-def download_datasets():
-    """Download all datasets"""
-    print("Starting datasets downloads...\n")
-    for url in tqdm(DATASETS_URLS, desc='download datasets'):
-        download(url, 'datasets')
+def download_files(dataset_type: str):
+    """Download all files from a dataset type
 
-
-def download_images():
-    """Download all images"""
-    print("Starting images downloads...\n")
+    Args:
+        dataset_type (str): The dataset type which has to download files
+    """
+    print(f"Starting {dataset_type} files download...\n")
+    for url in tqdm(CONTENT[dataset_type], desc=f'Downloading {dataset_type} files'):
+        download(url, dataset_type)
 
 
 def get_input(msg: str) -> bool:
@@ -129,22 +127,25 @@ def get_input(msg: str) -> bool:
 if __name__ == '__main__':
     print('Answer Y(yes) or N(No)')
 
-    # input if user wants to download metadata
-    datasets = get_input('Do you want download metadata about images (only datasets)?: ')
-    # create folder if need it
-    if datasets:
-        create_data_folder('datasets')
+    # Create a dict to hold all choices made by the user
+    choices = dict()
 
-    # input if user wants to download images
-    images = get_input('Do you want download ALL images (this could take longer)? : ')
-    # create folder if need it
-    if images:
-        create_data_folder('images')
+    # Get from user which data has to be downloaded
+    for dataset_type in CONTENT.keys():
+        choice = get_input(f'Do you want download {dataset_type} data? ')
 
-    # start downloads
-    if datasets:
-        download_datasets()
-    if images:
-        download_images()
+        # save the choice of the user
+        choices[dataset_type] = choice
+
+        if choice:
+            create_data_folder(dataset_type)
+
+    # iterate for each choice
+    for dataset_type, choice in choices.items():
+        print(f'{dataset_type} dataset files... ', end='')
+        if choice:
+            download_files(dataset_type)
+        else:
+            print(f'Nothing to be done!')
 
     print('All done! =]')
