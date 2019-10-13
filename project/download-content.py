@@ -35,10 +35,10 @@ def create_data_folder(folder: str):
 
     if os.path.exists(path):
         if get_input(f'{path} ALREADY EXIST!\nDo you want to delete? '):
-            print(f'deleting {path}...')
+            print(f'deleting {path}... ', end='')
             shutil.rmtree(path)
         else:
-            raise SystemExit('Exit by user!')
+            raise SystemExit('Canceled by user!')
 
     print(f'creating {path}...\n')
     os.mkdir(path)
@@ -77,7 +77,7 @@ def download(url: str, folder: str):
 
     fullpath = os.path.join(path, filename)
 
-    t = tqdm(total=total_size, unit='iB', unit_scale=True)
+    t = tqdm(total=total_size, unit='iB', unit_scale=True, desc=filename, leave=False)
     with open(fullpath, 'wb') as f:
         for data in req.iter_content(block_size):
             t.update(len(data))
@@ -91,7 +91,7 @@ def download(url: str, folder: str):
 def download_datasets():
     """Download all datasets"""
     print("Starting datasets downloads...\n")
-    for url in DATASETS_URLS:
+    for url in tqdm(DATASETS_URLS, desc='download datasets'):
         download(url, 'datasets')
 
 
