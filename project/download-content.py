@@ -13,7 +13,8 @@ import shutil
 
 from tqdm import tqdm
 
-with open('content_reference.json') as f:
+with open(os.path.join(os.path.dirname(os.path.relpath(__file__)),
+                       'content_reference.json')) as f:
     CONTENT = json.load(f)
 
 ROOTPATH = os.path.join(os.path.dirname(os.path.relpath(__file__)),
