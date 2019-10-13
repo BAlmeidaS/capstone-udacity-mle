@@ -7,7 +7,19 @@ Example:
 """
 
 import os
+import requests
 import shutil
+
+from tqdm import tqdm
+
+DATASETS_URLS = ['https://storage.googleapis.com/openimages/challenge_2019/challenge-2019-train-detection-human-imagelabels.csv',
+                 'https://storage.googleapis.com/openimages/challenge_2019/challenge-2019-train-detection-bbox.csv',
+                 'https://storage.googleapis.com/openimages/challenge_2019/challenge-2019-validation-detection-human-imagelabels.csv',
+                 'https://storage.googleapis.com/openimages/challenge_2019/challenge-2019-validation-detection-bbox.csv',
+                 'https://storage.googleapis.com/openimages/challenge_2019/challenge-2019-classes-description-500.csv',
+                 'https://storage.googleapis.com/openimages/challenge_2019/challenge-2019-label500-hierarchy.json']
+
+ROOTPATH = os.path.dirname(os.path.relpath(__file__))
 
 
 def create_data_folder(folder: str):
@@ -19,8 +31,7 @@ def create_data_folder(folder: str):
     Raises:
         SystemExit: If user opts to not delete folder
     """
-    root = os.path.dirname(os.path.relpath(__file__))
-    path = os.path.join(root, 'data', folder)
+    path = os.path.join(ROOTPATH, 'data', folder)
 
     if os.path.exists(path):
         if get_input(f'{path} ALREADY EXIST!\nDo you want to delete? '):
@@ -33,9 +44,55 @@ def create_data_folder(folder: str):
     os.mkdir(path)
 
 
+def get_filename(url: str):
+    """Get filename from content-disposition
+
+    Args:
+        url (str): the url
+    """
+    return url[url.rfind("/") + 1:]
+
+
+def download(url: str, folder: str):
+    """Function that Download somethi
+
+    Args:
+        url (str): the url for download file
+        folder (str): the relative path of folder where to write the file downloaded
+    """
+    # Streaming, so we can iterate over the response.
+    req = requests.get(url, stream=True, allow_redirects=True)
+
+    # Total size in bytes.
+    total_size = int(req.headers.get('content-length', 0))
+
+    # define the block size
+    block_size = 1024
+
+    # the path for save file - using data folder
+    path = os.path.join(ROOTPATH, 'data', folder)
+
+    # the filename get from request
+    filename = get_filename(url)
+
+    fullpath = os.path.join(path, filename)
+
+    t = tqdm(total=total_size, unit='iB', unit_scale=True)
+    with open(fullpath, 'wb') as f:
+        for data in req.iter_content(block_size):
+            t.update(len(data))
+            f.write(data)
+    t.close()
+
+    if total_size != 0 and t.n != total_size:
+        RuntimeError(f"ERROR DURING DOWNLOAD {url}")
+
+
 def download_datasets():
     """Download all datasets"""
     print("Starting datasets downloads...\n")
+    for url in DATASETS_URLS:
+        download(url, 'datasets')
 
 
 def download_images():
