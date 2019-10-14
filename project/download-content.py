@@ -10,6 +10,7 @@ import json
 import os
 import requests
 import shutil
+import tarfile
 
 from tqdm import tqdm
 
@@ -88,7 +89,7 @@ def download(url: str, folder: str):
         RuntimeError(f"ERROR DURING DOWNLOAD {url}")
 
 
-def extract(url: str, dataset_type: str):
+def extract(url: str, folder: str):
     """Function that extract some tar file and after do it, delete it.
 
     Args:
@@ -108,7 +109,7 @@ def extract(url: str, dataset_type: str):
     tar = tarfile.open(fullpath)
 
     # extract all files
-    tar.extractall()
+    tar.extractall(path=path)
 
     # close file
     tar.close()
