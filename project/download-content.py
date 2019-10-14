@@ -88,15 +88,59 @@ def download(url: str, folder: str):
         RuntimeError(f"ERROR DURING DOWNLOAD {url}")
 
 
-def download_files(dataset_type: str):
+def extract(url: str, dataset_type: str):
+    """Function that extract some tar file and after do it, delete it.
+
+    Args:
+        url (str): the url for download file
+        folder (str): the relative path of folder where to write the file downloaded
+    """
+    # the path for save file - using data folder
+    path = os.path.join(ROOTPATH, folder)
+
+    # the filename get from request
+    filename = get_filename(url)
+
+    # fullpath for the file
+    fullpath = os.path.join(path, filename)
+
+    # open the tar file
+    tar = tarfile.open(fullpath)
+
+    # extract all files
+    tar.extractall()
+
+    # close file
+    tar.close()
+
+    # remove tar file
+    os.remove(fullpath)
+
+
+def download_files(dataset_type: str, urls: list):
     """Download all files from a dataset type
 
     Args:
         dataset_type (str): The dataset type which has to download files
+        urls (list): list of urls to download files
     """
     print(f"Starting {dataset_type} files download...\n")
-    for url in tqdm(CONTENT[dataset_type], desc=f'Downloading {dataset_type} files'):
+    for url in tqdm(urls, desc=f'Downloading {dataset_type} files'):
         download(url, dataset_type)
+
+
+def download_extract_files(dataset_type: str, urls: list):
+    """Download all files from a dataset type and extract one by one.
+    Removing all tar files after end each extraction
+
+    Args:
+        dataset_type (str): The dataset type which has to download files
+        urls (list): list of urls to download files
+    """
+    print(f"Starting {dataset_type} files download...\n")
+    for url in tqdm(urls, desc=f'Downloading and extracting {dataset_type} files'):
+        download(url, dataset_type)
+        extract(url, dataset_type)
 
 
 def get_input(msg: str) -> bool:
@@ -132,21 +176,20 @@ if __name__ == '__main__':
     choices = dict()
 
     # Get from user which data has to be downloaded
-    for dataset_type in CONTENT.keys():
-        choice = get_input(f'Do you want download {dataset_type} data? ')
+    for set_type, content in CONTENT.items():
+        if get_input(f"Do you want download {set_type} data?\n({content['info']}): "):
+            # save the choice of the user
+            choices[set_type] = content["urls"]
 
-        # save the choice of the user
-        choices[dataset_type] = choice
-
-        if choice:
-            create_data_folder(dataset_type)
+            create_data_folder(set_type)
 
     # iterate for each choice
-    for dataset_type, choice in choices.items():
-        print(f'{dataset_type} dataset files... ', end='')
-        if choice:
-            download_files(dataset_type)
+    for set_type, urls in choices.items():
+        print(f'{set_type} data files... ', end='')
+        if set_type == 'METADATA':
+            download_files(set_type, urls)
         else:
-            print(f'Nothing to be done!')
+            download_extract_files(set_type, urls)
+
 
     print('All done! =]')
