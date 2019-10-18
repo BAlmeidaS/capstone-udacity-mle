@@ -2,16 +2,12 @@
   "METADATA": {
     "info": "you should download this files - approx 2.8Gb",
     "urls": [
-      "https://storage.googleapis.com/openimages/challenge_2019/challenge-2019-classes-description-500.csv",
-      "https://storage.googleapis.com/openimages/challenge_2019/challenge-2019-label500-hierarchy.json",
+      "https://storage.googleapis.com/openimages/v5/class-descriptions-boxable.csv",
+      "https://storage.googleapis.com/openimages/2018_04/bbox_labels_600_hierarchy.json",
       "https://storage.googleapis.com/openimages/v5/train-annotations-human-imagelabels-boxable.csv",
       "https://storage.googleapis.com/openimages/2018_04/train/train-annotations-bbox.csv",
-      "https://storage.googleapis.com/openimages/challenge_2019/challenge-2019-train-detection-human-imagelabels.csv",
-      "https://storage.googleapis.com/openimages/challenge_2019/challenge-2019-train-detection-bbox.csv",
       "https://storage.googleapis.com/openimages/v5/validation-annotations-human-imagelabels-boxable.csv",
       "https://storage.googleapis.com/openimages/v5/validation-annotations-bbox.csv",
-      "https://storage.googleapis.com/openimages/challenge_2019/challenge-2019-validation-detection-human-imagelabels.csv",
-      "https://storage.googleapis.com/openimages/challenge_2019/challenge-2019-validation-detection-bbox.csv",
       "https://storage.googleapis.com/openimages/v5/test-annotations-human-imagelabels-boxable.csv",
       "https://storage.googleapis.com/openimages/v5/test-annotations-bbox.csv"
     ]
