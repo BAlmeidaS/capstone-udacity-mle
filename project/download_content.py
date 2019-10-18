@@ -18,7 +18,7 @@ with open(os.path.join(os.path.dirname(os.path.relpath(__file__)),
                        'content_reference.json')) as f:
     CONTENT = json.load(f)
 
-ROOTPATH = os.path.join(os.path.dirname(os.path.relpath(__file__)),
+DATAPATH = os.path.join(os.path.dirname(os.path.relpath(__file__)),
                         'data')
 
 
@@ -31,7 +31,7 @@ def create_data_folder(folder: str):
     Raises:
         SystemExit: If user opts to not delete folder
     """
-    path = os.path.join(ROOTPATH, folder)
+    path = os.path.join(DATAPATH, folder)
 
     if os.path.exists(path):
         if get_input(f'{path} ALREADY EXIST!\nDo you want to delete? '):
@@ -70,7 +70,7 @@ def download(url: str, folder: str):
     block_size = 1024
 
     # the path for save file - using data folder
-    path = os.path.join(ROOTPATH, folder)
+    path = os.path.join(DATAPATH, folder)
 
     # the filename get from request
     filename = get_filename(url)
@@ -97,7 +97,7 @@ def extract(url: str, folder: str):
         folder (str): the relative path of folder where to write the file downloaded
     """
     # the path for save file - using data folder
-    path = os.path.join(ROOTPATH, folder)
+    path = os.path.join(DATAPATH, folder)
 
     # the filename get from request
     filename = get_filename(url)
@@ -168,6 +168,22 @@ def get_input(msg: str) -> bool:
         return True
     else:
         return False
+
+
+def does_data_exist(dataset_type: str) -> bool:
+    """Validate if data was downloaded
+
+    Args:
+        dataset_type (str):
+
+    Returns:
+        bool
+
+    Raises:
+        OSError: If the folder does not exists
+    """
+    path = os.path.join(DATAPATH, dataset_type.upper())
+    return os.path.isdir(path)
 
 
 if __name__ == '__main__':
