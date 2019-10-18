@@ -170,20 +170,16 @@ def get_input(msg: str) -> bool:
         return False
 
 
-def does_data_exist(dataset_type: str) -> bool:
-    """Validate if data was downloaded
-
-    Args:
-        dataset_type (str):
+def does_metadata_exist() -> bool:
+    """Validate if metadata was downloaded
 
     Returns:
         bool
-
-    Raises:
-        OSError: If the folder does not exists
     """
-    path = os.path.join(DATAPATH, dataset_type.upper())
-    return os.path.isdir(path)
+    path = os.path.join(DATAPATH, "METADATA")
+    files = (ref.split('/')[-1] for ref in CONTENT['METADATA']['urls'])
+
+    return all(os.path.exists(os.path.join(path, f)) for f in files)
 
 
 if __name__ == '__main__':
