@@ -4,5 +4,5 @@ clean-all-data:
 	@echo 'all data downloaded were deleted!'
 
 download-content:
-	@python3 project/download-content.py
+	@python3 project/download_content.py
 
