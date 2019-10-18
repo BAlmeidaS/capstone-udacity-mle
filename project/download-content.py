@@ -192,5 +192,4 @@ if __name__ == '__main__':
         else:
             download_extract_files(set_type, urls)
 
-
     print('All done! =]')
