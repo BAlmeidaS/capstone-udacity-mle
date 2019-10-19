@@ -1,7 +1,22 @@
+import os
+import csv
 from collections.abc import Iterable
 
+from project.download_content import DATAPATH
 
-def flatten(coll):
+classes_csv_path = os.path.join(DATAPATH,
+                                'METADATA',
+                                'class-descriptions-boxable.csv')
+
+with open(classes_csv_path, mode='r') as f:
+    classes_map = {rows[0]: rows[1] for rows in csv.reader(f)}
+
+
+def semantic_name(encoded_name: str):
+    return classes_map[encoded_name]
+
+
+def flatten(coll: object):
     for i in coll:
         if isinstance(i, Iterable) and not isinstance(i, str):
             for subc in flatten(i):
