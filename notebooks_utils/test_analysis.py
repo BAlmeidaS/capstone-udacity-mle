@@ -35,6 +35,10 @@ def test_find_path_to_node():
                      {'LabelName': '66',
                       'Subcategory': [
                           {'LabelName': '77'}
+                      ]},
+                     {'LabelName': '99',
+                      'Subcategory': [
+                          {'LabelName': '77'}
                       ]}
                  ]},
                 {'LabelName': '88',
@@ -42,5 +46,6 @@ def test_find_path_to_node():
                      {'LabelName': '77'}
                  ]}
             ]}
-    assert find_path_to_node(tree, '77') == [['11', '55', '66', '77'],
-                                             ['11', '88', '77']]
+    assert find_path_to_node(tree, '77') == [('11', '55', '66', '77'),
+                                             ('11', '55', '99', '77'),
+                                             ('11', '88', '77')]

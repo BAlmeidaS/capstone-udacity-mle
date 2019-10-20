@@ -13,16 +13,11 @@ with open(classes_csv_path, mode='r') as f:
 
 
 def semantic_name(encoded_name: str):
-    return classes_map[encoded_name]
-
-
-def flatten(coll: object):
-    for i in coll:
-        if isinstance(i, Iterable) and not isinstance(i, str):
-            for subc in flatten(i):
-                yield subc
-        else:
-            yield i
+    try:
+        name = classes_map[encoded_name]
+    except KeyError:
+        name = 'Entity'
+    return name
 
 
 def count_recursive(tree: dict) -> int:
@@ -39,14 +34,16 @@ def count_recursive(tree: dict) -> int:
     return recursion(tree), nodes
 
 
-def find_path_to_node(tree: dict, some_class: str) -> list:
-    if tree['LabelName'] == some_class:
-        return [some_class]
-    elif 'Subcategory' in tree.keys():
-        paths = []
-        for subcat in tree['Subcategory']:
-            path = find_path_to_node(subcat, some_class)
-            if path:
-                full_path = list(flatten([tree['LabelName']] + path))
-                paths.append(full_path)
-        return paths
+def node_path(tree: dict, some_class: str, *args) -> list:
+    paths = []
+
+    def find_paths_recursive(tree, *args):
+        if tree['LabelName'] == some_class:
+            paths.append((*args, some_class))
+        elif 'Subcategory' in tree.keys():
+            for subcat in tree['Subcategory']:
+                find_paths_recursive(subcat, *args, tree['LabelName'])
+
+    find_paths_recursive(tree)
+
+    return paths
