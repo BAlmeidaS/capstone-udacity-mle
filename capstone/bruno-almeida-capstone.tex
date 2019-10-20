@@ -38,7 +38,7 @@
 
 \section{Definition}
 \subsection{Project Overview}
-The main challenge in this project is to create a model that identifies many objects in an image. This challenge involves two main tasks. The former identifies in an image where it is the position of an object that it could be classified, and around it, we are going to draw a bounding box. The latter classifies those bounding boxes correctly, labeling a chair as a chair, a table as a table, and a human hand as a human hand.
+The main challenge in this project is to create a model that identifies many objects in an image. This challenge involves two main tasks. The former identifies in an image where it is the position of an object that could be classified, and around it, we are going to draw a bounding box. The latter classifies those bounding boxes correctly, labeling a chair as a chair, a table as a table, and a human hand as a human hand.
 
 \begin{figure}[ht]
 	\centering
@@ -46,7 +46,7 @@ The main challenge in this project is to create a model that identifies many obj
 	\caption{\scriptsize Mark Paul Gosselaar plays the guitar by Rhys A. \cite{google:1}}
 \end{figure}
 
-The Kaggle challenge created by Google called Open Images 2019 - Object Detection \cite{kaggle} motivates this project. This Kaggle was created using the recent data set announced, the Open Images Dataset v5 \cite{google:1}. This project proposes to show some strategies to solve the problem, given a deep dive into some deep neural network architectures. 
+The Kaggle challenge created by Google called Open Images 2019 - Object Detection \cite{kaggle} motivates this project. This Kaggle was created using the recent dataset announced, the Open Images Dataset v5 \cite{google:1}. This project proposes to show some strategies to solve the problem, giving a deep dive into some deep neural network architectures. 
 
 \subsection{Problem Statement}
 
@@ -68,7 +68,7 @@ The Categorical Crossentropy used in the Classifier model is straightforward sin
 
 The IoU metric used as loss function arrives because mAP derives directly from the IoU. Since the mAP is going to be used as a metric to compare all models, it sounds reasonable to use IoU as a loss function to be optimized in the model responsible for creating the Bounding Boxes.
 
-In the first step, the project starts to using the Transfer Learning technique in many famous networks - such as ResNet-N layers \cite{resnet}, Inception-V4 \cite{inception}, Xception \cite{xception}, and Inception-ResNets \cite{inception} - for both models, Object Identification, and Classifier. With Transfer Learning, we expect to achieve some reasonable results.
+In the first step, the project starts to use the Transfer Learning technique in many famous networks - such as ResNet-N layers \cite{resnet}, Inception-V4 \cite{inception}, Xception \cite{xception}, and Inception-ResNets \cite{inception} - for both models, Object Identification, and Classifier. With Transfer Learning, we expect to achieve some reasonable results.
 
 For the second and final step of the project, this work proposes to create, at minimum, one new architecture that could face other architectures seen above.
 
@@ -85,12 +85,12 @@ The mAP metric could be defined as
 
 where $C$ value is the number of all categories (classes).
 
-To understand $AP_c$, it must comprehend first what is $IoU$. $IoU$ is the Intersection over Union, and it is equal to the ratio of the area of intersection and area of the union of the predicted bounding box (created by the model) and Ground-truth bounding box (previously annotated).
+To understand $AP_c$, it must comprehend first what is $IoU$. $IoU$ is the Intersection over Union. It is equal to the ratio of the $Area\ of\ Overlap$ and the $Area\ of\ Union$, considering the Predict bounding box (created by the model) and the Ground-truth bounding box (previously annotated).
 
 
 \begin{figure}[!ht]
 	\centering
-	\subfloat[\scriptsize  Difference between a predict bounding box with a Ground-truth bouding box \cite{pyimage}]{{\includegraphics[width=5cm]{iou_stop_sign} }}%
+	\subfloat[\scriptsize  Difference between a Predict bounding box with a Ground-truth bouding box \cite{pyimage}]{{\includegraphics[width=5cm]{iou_stop_sign} }}%
 	\qquad
 	\subfloat[\scriptsize IoU visual represented \cite{pyimage}]{{\includegraphics[width=5cm]{iou_equation} }}%
 	%\caption{2 Figures side by side}%
@@ -124,7 +124,7 @@ So by definition, $AP_c$ (Average Precision of some category c), is defined as a
 	\end{equation*}
 	where $p(r)$ is the precision defined in function of recall.}
 
-It is essential to retain that in this project it is going to be used $AP_{50}$ (which uses a threshold of 0.5 in $IoU$ to define $TP$), but other average precisions metrics could be used, like, $AP_{75}$ (with $IoU$ threshold of 0.75) or $AP_{90}$ (with $IoU$ threshold of 0.90).
+It is essential to retain that in this project it is going to be used $AP_{50}$ (which uses a threshold of 0.5 in $IoU$ to define $TP$), but other average precision metrics could be used, like, $AP_{75}$ (with $IoU$ threshold of 0.75) or $AP_{90}$ (with $IoU$ threshold of 0.90).
 
 \section{Analysis}
 \subsection{Data Exploration}
