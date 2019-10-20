@@ -15,11 +15,7 @@ with open(classes_csv_path, mode='r') as f:
 
 
 def semantic_name(encoded_name: str):
-    try:
-        name = classes_map[encoded_name]
-    except KeyError:
-        name = 'Entity'
-    return name
+    return classes_map[encoded_name]
 
 
 def count_recursive(tree: dict) -> int:
