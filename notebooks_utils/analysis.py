@@ -67,3 +67,9 @@ def all_images_downloaded() -> bool:
     """return true if all folder of all images are created, otherwise False"""
     return all([os.path.exists(os.path.join(DATAPATH, data_type))
                 for data_type in ['TRAIN', 'VALIDATION', 'TEST']])
+
+
+def check_images_download():
+    """raise an exception if images were not downloaded"""
+    if not all_images_downloaded():
+        raise RuntimeError('You did not download images, this cell will not run properly!')
