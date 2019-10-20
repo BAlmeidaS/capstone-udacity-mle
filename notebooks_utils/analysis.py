@@ -2,6 +2,8 @@ import os
 import csv
 from collections.abc import Iterable
 
+import pandas as pd
+
 from project.download_content import DATAPATH
 
 classes_csv_path = os.path.join(DATAPATH,
@@ -47,3 +49,21 @@ def node_path(tree: dict, some_class: str, *args) -> list:
     find_paths_recursive(tree)
 
     return paths
+
+
+def images_downloaded(data_type: str) -> pd.DataFrame:
+    temp_array = []
+    path = os.path.join(DATAPATH, data_type)
+    for root, dirs, files in os.walk(path):
+        temp_array += files
+
+    df = pd.DataFrame(temp_array, columns=['ImageID'])
+    df.ImageID = df.ImageID.apply(lambda x: x[:-4])
+
+    return df
+
+
+def all_images_downloaded() -> bool:
+    """return true if all folder of all images are created, otherwise False"""
+    return all([os.path.exists(os.path.join(DATAPATH, data_type))
+                for data_type in ['TRAIN', 'VALIDATION', 'TEST']])
