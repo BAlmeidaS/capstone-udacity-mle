@@ -1,10 +1,13 @@
 import os
 import csv
-from collections.abc import Iterable
 
 import pandas as pd
+import numpy as np
+
+from plotly import graph_objects as go
 
 from project.download_content import DATAPATH
+
 
 classes_csv_path = os.path.join(DATAPATH,
                                 'METADATA',
@@ -47,6 +50,21 @@ def node_path(tree: dict, some_class: str, *args) -> list:
     return paths
 
 
+def generate_df(tree: dict, some_class: str, *args) -> list:
+    paths = []
+
+    def find_paths_recursive(tree, *args):
+        if tree['LabelName'] == some_class:
+            paths.append((*args, some_class))
+        elif 'Subcategory' in tree.keys():
+            for subcat in tree['Subcategory']:
+                find_paths_recursive(subcat, *args, tree['LabelName'])
+
+    find_paths_recursive(tree)
+
+    return paths
+
+
 def images_downloaded(data_type: str) -> pd.DataFrame:
     temp_array = []
     path = os.path.join(DATAPATH, data_type)
@@ -69,3 +87,57 @@ def check_images_download():
     """raise an exception if images were not downloaded"""
     if not all_images_downloaded():
         raise RuntimeError('You did not download images, this cell will not run properly!')
+
+
+def create_sankey(df, height, width, classes_ref):
+    fig = go.Figure(data=[go.Sankey(
+        valueformat=".0f",
+        valuesuffix="TWh",
+        node=dict(
+            pad=5,
+            thickness=10,
+            line=dict(color="black", width=0.5),
+            label=classes_ref.sort_values(by=['Id']).Label.unique(),
+            color=(classes_ref.sort_values(by=['Id'])
+                              .drop_duplicates(['Id'])
+                              .Leaf
+                              .apply(lambda x: "#c8d419" if x else "#f63a76"))
+        ),
+        link=dict(
+            source=df.IdParent.values,
+            target=df.Id.values,
+            value=np.ones(df.shape[0]),
+            color="#ebebeb"))])
+
+    fig.update_layout(title_text="Basic Sankey Diagram", font_size=10)
+
+    fig.update_layout(height=height, width=width)
+
+    return fig
+
+
+def tabularize_hierarchy_dict(graph: dict, classes) -> list:
+    arr = []
+
+    def flatten_dict(subgraph: dict,
+                     parent_id: int = -1,
+                     parent_label: str = None,
+                     depth: int = 0):
+
+        node_label = subgraph['LabelName']
+        node_id = classes[classes.class_name == node_label].index[0]
+        leaf = True
+
+        if 'Subcategory' in subgraph.keys():
+            leaf = False
+            for subcat in subgraph['Subcategory']:
+                flatten_dict(subcat,
+                             node_id,
+                             node_label,
+                             depth+1)
+
+        arr.append([node_id, node_label, parent_id, parent_label, depth, leaf])
+
+    flatten_dict(graph)
+
+    return arr
