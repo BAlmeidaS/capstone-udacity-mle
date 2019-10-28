@@ -89,11 +89,13 @@ def check_images_download():
         raise RuntimeError('You did not download images, this cell will not run properly!')
 
 
-def create_sankey(df, height, width, classes_ref, title, pad=5):
+def create_sankey(df, height, width, classes_ref, title, pad=5, pos_leg=None):
     fig = go.Figure(data=[go.Sankey(
-        valueformat=".0f",
-        valuesuffix="TWh",
+        name='bruno',
+        valueformat="",
+        valuesuffix="",
         node=dict(
+            groups=[[1]]*(classes_ref.Label.nunique() - 1),
             pad=pad,
             thickness=10,
             line=dict(color="black", width=0.5),
@@ -112,6 +114,39 @@ def create_sankey(df, height, width, classes_ref, title, pad=5):
     fig.update_layout(title_text=title, font_size=10)
 
     fig.update_layout(height=height, width=width)
+
+    fig.update_layout(showlegend=True)
+
+    if pos_leg:
+        fig.update_layout(go.Layout(
+            annotations=[
+                go.layout.Annotation(
+                    text='<b>Leaf</b>',
+                    align='left',
+                    showarrow=False,
+                    x=pos_leg[0][0],
+                    y=pos_leg[0][1],
+                    font=dict(
+                        size=12,
+                        color='#444444'
+                    ),
+                    bordercolor='#000000',
+                    bgcolor='#c8d419',
+                    borderwidth=1
+                ),
+                go.layout.Annotation(
+                    text='<b>Path</b>',
+                    align='left',
+                    showarrow=False,
+                    font=dict(
+                        size=12,
+                        color='#ffffff'
+                    ),
+                    x=pos_leg[1][0],
+                    y=pos_leg[1][1],
+                    bordercolor='#000000',
+                    bgcolor='#f63a76',
+                    borderwidth=1)]))
 
     return fig
 
