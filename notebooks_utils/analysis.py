@@ -89,12 +89,12 @@ def check_images_download():
         raise RuntimeError('You did not download images, this cell will not run properly!')
 
 
-def create_sankey(df, height, width, classes_ref):
+def create_sankey(df, height, width, classes_ref, title, pad=5):
     fig = go.Figure(data=[go.Sankey(
         valueformat=".0f",
         valuesuffix="TWh",
         node=dict(
-            pad=5,
+            pad=pad,
             thickness=10,
             line=dict(color="black", width=0.5),
             label=classes_ref.sort_values(by=['Id']).Label.unique(),
@@ -109,7 +109,7 @@ def create_sankey(df, height, width, classes_ref):
             value=np.ones(df.shape[0]),
             color="#ebebeb"))])
 
-    fig.update_layout(title_text="Basic Sankey Diagram", font_size=10)
+    fig.update_layout(title_text=title, font_size=10)
 
     fig.update_layout(height=height, width=width)
 
