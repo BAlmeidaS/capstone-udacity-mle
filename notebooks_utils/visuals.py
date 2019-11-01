@@ -49,8 +49,9 @@ def stacked_bar(ax, title, labels, legends, *args, active_legends=True):
 
     if active_legends:
         for j, v in enumerate(args[0]):
-            ax.text(-0.17 + j*1, (v - 8),
-                    f"{v:2.2f}%", color='white', fontweight='bold')
+            if v > 3:
+                ax.text(-0.17 + j*1, (v - 8),
+                        f"{v:2.2f}%", color='white', fontweight='bold')
 
     # draw bars after the first
     for i, bottom in enumerate(accumulate(args[:-1], calc_bottom), 1):
@@ -59,8 +60,9 @@ def stacked_bar(ax, title, labels, legends, *args, active_legends=True):
 
         if active_legends:
             for j, v in enumerate(args[i]):
-                ax.text(-0.17 + j*1, (v - 8) + bottom[j],
-                        f"{v:2.2f}%", color='white', fontweight='bold')
+                if v > 9:
+                    ax.text(-0.17 + j*1, (v - 8) + bottom[j],
+                            f"{v:2.2f}%", color='white', fontweight='bold')
 
     # legend
     ax.legend(loc='lower right')
