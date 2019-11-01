@@ -5,6 +5,8 @@ import pandas as pd
 
 from project.download_content import DATAPATH
 
+from itertools import accumulate
+
 
 classes_csv_path = os.path.join(DATAPATH,
                                 'METADATA',
@@ -111,3 +113,39 @@ def tabularize_hierarchy_dict(graph: dict, classes) -> list:
     flatten_dict(graph)
 
     return arr
+
+
+def amount_and_percentage(df: pd.DataFrame, feature: str) -> list:
+    # create labels
+    labels = df.sort_values(by='Type', ascending=False).Type.unique()
+
+    # aggregate by Type and count feature
+    agg_by_type = (df.groupby('Type')[feature]
+                   .value_counts()
+                   .to_frame()
+                   .rename(columns={feature: f'{feature}Count'})
+                   .reset_index())
+
+    categories = agg_by_type[feature].unique()
+
+    # count each occurrence in each feature
+    counts = {}
+    for cat in categories:
+        df_temp = agg_by_type.sort_values(by='Type', ascending=False)
+        counts[cat] = df_temp[df_temp[feature] == cat][f'{feature}Count'].tolist()
+
+
+    # useful function to calcule the sum of n arrays
+    def count(*args):
+        # pattern matching to get last values
+        *_, total = accumulate(args)
+        return total
+
+    total_by_type = list(map(lambda *args: count(*args), *counts.values()))
+
+    # calculate the percentage of each feature
+    percs = {}
+    for cat, count_by_cat in counts.items():
+        percs[cat] = [i/j * 100 for i, j in zip(count_by_cat, total_by_type)]
+
+    return labels, counts, percs

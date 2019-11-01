@@ -1,13 +1,16 @@
 import numpy as np
+import seaborn as sns
 
 from plotly import graph_objects as go
 
-from itertools import accumulate, repeat
+from itertools import accumulate
 
 
 def barplot(ax, title, labels, legends, *args):
     r = np.arange(len(labels))
     width = 0.8/len(args)
+
+    palette = sns.diverging_palette(10, 220, sep=80, n=len(legends))
 
     # set titles
     ax.set_title(title)
@@ -17,8 +20,7 @@ def barplot(ax, title, labels, legends, *args):
     ax.set_xticklabels(labels)
 
     for i, arg in enumerate(args):
-        ax.bar((r-0.4) + width*i,
-               arg, width, label=legends[i])
+        ax.bar((r-0.4) + width*i, arg, width, label=legends[i], color=palette[i])
 
     ax.set_axisbelow(True)
     ax.grid(which='major', axis='y', fillstyle='bottom')
@@ -26,9 +28,11 @@ def barplot(ax, title, labels, legends, *args):
     ax.legend(loc='upper right')
 
 
-def stacked_bar(ax, title, labels, legends, *args):
+def stacked_bar(ax, title, labels, legends, *args, active_legends=True):
     r = np.arange(len(labels))
     barWidth = 0.8
+
+    palette = sns.diverging_palette(10, 220, sep=80, n=len(legends))
 
     # set titles
     ax.set_title(title)
@@ -38,22 +42,25 @@ def stacked_bar(ax, title, labels, legends, *args):
     ax.set_xticklabels(labels)
 
     # func to calc the bottom
-    calc_bottom = lambda a, b: [i+j for i,j in zip(a, b)]
+    calc_bottom = lambda a, b: [i+j for i, j in zip(a, b)]
 
     # draw first bar
-    ax.bar(r, args[0], width=barWidth, label=legends[0])
+    ax.bar(r, args[0], width=barWidth, label=legends[0], color=palette[0])
 
-    for j, v in enumerate(args[0]):
-        ax.text(-0.17 + j*1, (v - 8),
-            f"{v:2.2f}%", color='white', fontweight='bold')
+    if active_legends:
+        for j, v in enumerate(args[0]):
+            ax.text(-0.17 + j*1, (v - 8),
+                    f"{v:2.2f}%", color='white', fontweight='bold')
 
     # draw bars after the first
     for i, bottom in enumerate(accumulate(args[:-1], calc_bottom), 1):
-        ax.bar(r, args[i], bottom=bottom, width=barWidth, label=legends[i])
+        ax.bar(r, args[i], bottom=bottom, width=barWidth, label=legends[i],
+               color=palette[i])
 
-        for j, v in enumerate(args[i]):
-            ax.text(-0.17 + j*1, (v - 8) + bottom[j],
-                f"{v:2.2f}%", color='white', fontweight='bold')
+        if active_legends:
+            for j, v in enumerate(args[i]):
+                ax.text(-0.17 + j*1, (v - 8) + bottom[j],
+                        f"{v:2.2f}%", color='white', fontweight='bold')
 
     # legend
     ax.legend(loc='lower right')
