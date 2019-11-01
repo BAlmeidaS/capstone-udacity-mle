@@ -10,7 +10,7 @@ def barplot(ax, title, labels, legends, *args):
     r = np.arange(len(labels))
     width = 0.8/len(args)
 
-    palette = sns.diverging_palette(10, 220, sep=80, n=len(legends))
+    palette = sns.diverging_palette(255, 133, l=60, n=len(legends), center="dark")
 
     # set titles
     ax.set_title(title)
@@ -32,7 +32,7 @@ def stacked_bar(ax, title, labels, legends, *args, active_legends=True):
     r = np.arange(len(labels))
     barWidth = 0.8
 
-    palette = sns.diverging_palette(10, 220, sep=80, n=len(legends))
+    palette = sns.diverging_palette(255, 133, l=60, n=len(legends), center="dark")
 
     # set titles
     ax.set_title(title)

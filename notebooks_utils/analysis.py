@@ -131,9 +131,13 @@ def amount_and_percentage(df: pd.DataFrame, feature: str) -> list:
     # count each occurrence in each feature
     counts = {}
     for cat in categories:
+        for t in labels:
+            if agg_by_type[(agg_by_type.Type == t) & (agg_by_type[feature] == cat)].shape[0] == 0:
+                new_row = pd.DataFrame([[t, cat, 0]], columns=['Type', feature, f"{feature}Count"])
+                agg_by_type = agg_by_type.append(new_row, ignore_index=True)
+
         df_temp = agg_by_type.sort_values(by='Type', ascending=False)
         counts[cat] = df_temp[df_temp[feature] == cat][f'{feature}Count'].tolist()
-
 
     # useful function to calcule the sum of n arrays
     def count(*args):
