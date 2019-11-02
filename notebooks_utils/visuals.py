@@ -20,7 +20,10 @@ def barplot(ax, title, labels, legends, *args):
     ax.set_xticklabels(labels)
 
     for i, arg in enumerate(args):
-        ax.bar((r-0.4) + width*i, arg, width, label=legends[i], color=palette[i])
+        # ax.bar((r-0.8) + width*i, arg, width, label=legends[i], color=palette[i])
+        widths = np.arange(len(args)) * width
+
+        ax.bar(r + (widths[i] - np.median(widths)), arg, width, label=legends[i], color=palette[i])
 
     ax.set_axisbelow(True)
     ax.grid(which='major', axis='y', fillstyle='bottom')
@@ -40,6 +43,9 @@ def stacked_bar(ax, title, labels, legends, *args, active_legends=True):
     # set ticks
     ax.set_xticks(r)
     ax.set_xticklabels(labels)
+
+    yticks = ax.get_yticks()
+    ax.set_yticklabels([f"{x*100:.0f}%" for x in yticks])
 
     # func to calc the bottom
     calc_bottom = lambda a, b: [i+j for i, j in zip(a, b)]
