@@ -154,3 +154,40 @@ def show_imgs(imgs, ax_array, df_imgs):
             img_path = ref.Path
             raw = cv2.imread(img_path)
             ax.imshow(cv2.cvtColor(raw, cv2.COLOR_RGB2BGR))
+
+
+def show_bbox(imgs, ax_array, df_imgs, df_meta, print_others=True):
+    for i, ax_i in enumerate(ax_array):
+        for j, ax in enumerate(ax_i):
+            meta = imgs.iloc[i*2 + j]
+            ref = df_imgs.loc[meta.ImageID]
+
+            # cleaning axes
+            ax.set_xticks([])
+            ax.set_yticks([])
+            ax.grid()
+
+            ax.set_title(f"{meta.LabelSemantic.upper()} - {'/'.join(ref.Path.split('/')[2:])}")
+
+            img_path = ref.Path
+            raw = cv2.imread(img_path)
+            res = cv2.resize(raw, (int(raw.shape[1]/3), int(raw.shape[0]/3)))
+
+            if print_others:
+                for x in df_meta[df_meta.ImageID == meta.ImageID].itertuples():
+                    add_bbox(res, x)
+
+            add_bbox(res, meta, True)
+
+            ax.imshow(cv2.cvtColor(res, cv2.COLOR_RGB2BGR))
+
+
+def add_bbox(img, meta, principal=False):
+    left_bottom = (int(img.shape[1] * meta.XMin),
+                   int(img.shape[0] * meta.YMin))
+    right_top = (int(img.shape[1] * meta.XMax),
+                 int(img.shape[0] * meta.YMax))
+
+    color = (55, 255, 0) if principal else (255, 210, 0)
+
+    cv2.rectangle(img, left_bottom, right_top, color, 2)
