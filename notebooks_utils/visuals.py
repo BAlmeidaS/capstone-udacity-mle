@@ -5,6 +5,8 @@ from plotly import graph_objects as go
 
 from itertools import accumulate
 
+import cv2
+
 
 def barplot(ax, title, labels, legends, *args):
     r = np.arange(len(labels))
@@ -134,3 +136,21 @@ def sankey(df, height, width, classes_ref, title, pad=5, pos_leg=None):
                     borderwidth=1)]))
 
     return fig
+
+
+def show_imgs(imgs, ax_array, df_imgs):
+    for i, ax_i in enumerate(ax_array):
+        for j, ax in enumerate(ax_i):
+            img = imgs.iloc[i*2 + j]
+            ref = df_imgs.loc[img.ImageID]
+
+            # cleaning axes
+            ax.set_xticks([])
+            ax.set_yticks([])
+            ax.grid()
+
+            ax.set_title(f"{img.LabelSemantic.upper()}")
+
+            img_path = ref.Path
+            raw = cv2.imread(img_path)
+            ax.imshow(cv2.cvtColor(raw, cv2.COLOR_RGB2BGR))

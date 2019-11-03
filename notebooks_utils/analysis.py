@@ -73,7 +73,7 @@ def images_downloaded(data_type: str) -> pd.DataFrame:
     df = pd.DataFrame(temp_array, columns=['ImageID', 'Path'])
     df.ImageID = df.ImageID.apply(lambda x: x[:-4])
 
-    return df
+    return df.set_index('ImageID')
 
 
 def all_images_downloaded() -> bool:
