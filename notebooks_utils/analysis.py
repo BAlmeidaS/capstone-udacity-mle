@@ -68,9 +68,9 @@ def images_downloaded(data_type: str) -> pd.DataFrame:
     temp_array = []
     path = os.path.join(DATAPATH, data_type)
     for root, dirs, files in os.walk(path):
-        temp_array += files
+        temp_array += [[f, os.path.join(root, f)] for f in files]
 
-    df = pd.DataFrame(temp_array, columns=['ImageID'])
+    df = pd.DataFrame(temp_array, columns=['ImageID', 'Path'])
     df.ImageID = df.ImageID.apply(lambda x: x[:-4])
 
     return df
