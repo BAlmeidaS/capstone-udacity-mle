@@ -202,7 +202,7 @@ def plot_heatmap_corr(df, principal, secondary, figsize):
 
     for i, col in enumerate(df_aux):
         sns.heatmap(df_aux[[col]], annot=True, ax=axes[i],
-                    vmin=0, vmax=1, cmap="YlGnBu", fontsize=12)
+                    vmin=0, vmax=1, cmap="YlGnBu")
         axes[i].set_ylim(0, df_aux.shape[0])
 
     fig.text(0.5, 0, principal, ha='center', fontsize=14)
