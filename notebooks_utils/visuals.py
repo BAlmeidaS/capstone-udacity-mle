@@ -195,14 +195,14 @@ def add_bbox(img, meta, principal=False):
     cv2.rectangle(img, left_bottom, right_top, color, 2)
 
 
-def plot_heatmap_corr(axes, df, principal, secondary, figsize):
+def plot_heatmap_corr(df, principal, secondary, figsize):
     df_aux = _create_df_percentage(df, principal, secondary)
 
     fig, axes = plt.subplots(1, df_aux.shape[1], sharey=True, figsize=figsize)
 
     for i, col in enumerate(df_aux):
         sns.heatmap(df_aux[[col]], annot=True, ax=axes[i],
-                    vmin=0, vmax=1, cmap="YlGnBu")
+                    vmin=0, vmax=1, cmap="YlGnBu", fontsize=12)
         axes[i].set_ylim(0, df_aux.shape[0])
 
     fig.text(0.5, 0, principal, ha='center', fontsize=14)
