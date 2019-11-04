@@ -1,7 +1,9 @@
 import numpy as np
 import seaborn as sns
+import pandas as pd
 
 from plotly import graph_objects as go
+from matplotlib import pyplot as plt
 
 from itertools import accumulate
 
@@ -191,3 +193,37 @@ def add_bbox(img, meta, principal=False):
     color = (55, 255, 0) if principal else (255, 210, 0)
 
     cv2.rectangle(img, left_bottom, right_top, color, 2)
+
+
+def plot_heatmap_corr(axes, df, principal, secondary, figsize):
+    df_aux = _create_df_percentage(df, principal, secondary)
+
+    fig, axes = plt.subplots(1, df_aux.shape[1], sharey=True, figsize=figsize)
+
+    for i, col in enumerate(df_aux):
+        sns.heatmap(df_aux[[col]], annot=True, ax=axes[i],
+                    vmin=0, vmax=1, cmap="YlGnBu")
+        axes[i].set_ylim(0, df_aux.shape[0])
+
+    fig.text(0.5, 0, principal, ha='center', fontsize=14)
+    fig.text(0.05, 0.5, secondary, va='center', rotation='vertical', fontsize=14)
+
+    return fig, axes
+
+
+def _create_df_percentage(df, principal, secondary):
+    arr = []
+    principal_values = df[principal].unique()
+    secondary_values = df[secondary].unique()
+
+    for line in principal_values:
+        total = df[df[principal] == line].shape[0]
+        for col in secondary_values:
+            arr.append(df[(df[principal] == line)
+                          & (df[secondary] == col)].shape[0] / total)
+
+    arr_aux = np.transpose(np.reshape(arr, (len(principal_values),
+                                            len(secondary_values))))
+
+    return (pd.DataFrame(arr_aux, columns=principal_values, index=secondary_values)
+              .sort_index(ascending=True))
