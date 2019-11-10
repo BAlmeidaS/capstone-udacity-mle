@@ -26,6 +26,10 @@
 
 \usepackage{subfig}
 
+\usepackage{appendix}
+\usepackage{etoolbox}
+\BeforeBeginEnvironment{appendices}{\clearpage}
+
 \graphicspath{ {./images/} }
 \begin{document}
 
@@ -127,6 +131,89 @@ So by definition, $AP_c$ (Average Precision of some category c), is defined as a
 It is essential to retain that in this project it is going to be used $AP_{50}$ (which uses a threshold of 0.5 in $IoU$ to define $TP$), but other average precision metrics could be used, like, $AP_{75}$ (with $IoU$ threshold of 0.75) or $AP_{90}$ (with $IoU$ threshold of 0.90).
 
 \section{Analysis}
+
+For the problem itself, there are two datasets (Image-level and bounding boxes), plus two files that describe each class used in the labeling process, and the relation among them.
+
+About the classes, there are 600 unique classes, and they are represented as a graph. So they have inheritances. All classes start from a class that I called "Entity" (it has no name, in fact), and all other classes derive from it or from the classes that derive from it on some level. \hyperref[sec:appendix-a]{In the appendix A}, I expose all connections at each level (the deepest level is five).
+
+The Train, Cross-Validation and Test set are already given by google. This project pretends to use the same distribution given. However, during the analysis it was possible to notice that there are some classes presented in Train set that are not presented in Test and Cross-Validation sets. The following table shows how much unique classes are present in each data set.
+
+\begin{table}[ht]
+	\footnotesize
+	\centering
+	\caption{ \footnotesize Unique classes in each Dataset and amount of Bounding Boxes }
+	\label{table1}
+	\begin{tabular}{lll}
+		& Unique Classes & Count of Boubing Boxes \\
+		\rowcolor[HTML]{EFEFEF} 
+		Train            & 599            & 14,609,671             \\
+		Cross-Validation & 570            & 303,980                \\
+		\rowcolor[HTML]{EFEFEF} 
+		Test             & 583            & 937,327               
+	\end{tabular}
+\end{table}
+
+Besides that, the distribution of each class is not uniform. 30 classes are responsible for 80\% of bounding boxes labels, and 300 classes are responsible for less than 1\% of bounding boxes. Of course, this affects how the final model performs in a random image.
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=0.7\textwidth]{cumulative-classes.png}
+	\caption{\scriptsize Cumulative count of classes order by appearance}
+\end{figure}
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=0.7\textwidth]{30-most-frequently.png}
+	\caption{\scriptsize The thirty classes with more appearance}
+\end{figure}
+
+There are two datasets, image-level label and bounding boxes, both divided by three (train, test, cross-validation). Google explains in the blog \cite{imgdataset} how they create the Image-level dataset and how, with it, they create the bounding boxes dataset. The label-image set was created, and a little part of it (around 1.7 million images) were chosen to have more granular work. The labels previously created were relabeled and transformed in bounding boxes that identify, not only what is the object, but the position of those objects. This work only uses the bounding boxes dataset.
+
+About Bouding Box Dataset, some points must be concerned.
+The labels in the original data set are encoded (probably to avoid mismatch and homonyms). In the analysis process they were converted to semantic labels (using an auxiliary dataset provided by google). However, in modeling, it is going to use the encoded version. 
+
+\begin{table}[!ht]
+	\footnotesize
+	\centering
+	\caption{ \footnotesize Amount of each flag in Bounding Box dataset }
+	\label{table2}
+	\begin{tabular}{llllll}
+		& IsOccluded & IsTruncated & IsGroupOf & IsDepiction & IsInside \\
+		\rowcolor[HTML]{EFEFEF} 
+		Train            & 9,629,150  & 3,643,883   & 852,641   & 774,485     & 13,718   \\
+		Cross-Validation & 134,497    & 69,698      & 26,360    & 14,181      & 2,200    \\
+		\rowcolor[HTML]{EFEFEF} 
+		Test             & 417,398    & 211,732     & 81,037    & 44,038      & 6,964   
+	\end{tabular}
+\end{table}
+
+Beyond the label and the bounding boxes position, the dataset also has some flags (IsOccluded, IsTruncated, IsGroupOf, IsDepiction, IsInside). These flags are very helpful to debug the decisions that a model does.
+
+"IsOccluded" points a Bounding Box that has a type of obstruction in it, making it more difficult to be understandable.
+
+"IsTruncated" points a Bounding Box that ends or starts in some edges of the image.
+
+"IsGroupOf" means that the label given is about a group of things, and the bounding box is around all of those things.
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=1\textwidth]{isgroupof-true.png}
+	\caption{\scriptsize Class Hierarchy - Second Level second part}
+\end{figure}
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=1\textwidth]{isgroupof-false.png}
+	\caption{\scriptsize Class Hierarchy - Second Level second part}
+\end{figure}
+
+"IsDepiction" represents bounding boxes that do not label the object itself, but a representation of the object. Draws, representation, costumes, are some examples.
+
+"IsInside" is about the Bounding Boxes labeled inside rooms or buildings, with artificial light.
+
+As stated, the distributions of classes are not uniform, and this is a big concern about how good the model will be. There is a more accurate and complete analysis, with a study of the correlations between flags and many other topics in all datasets. It can be checked in here \cite{eda}.
+
+
 \subsection{Data Exploration}
 \subsection{Exploratory Visualization}
 \subsection{Algorithms and Techniques}
@@ -145,4 +232,51 @@ It is essential to retain that in this project it is going to be used $AP_{50}$ 
 
 \bibliographystyle{unsrt}
 \bibliography{references.bib}{}
+
+\begin{appendices}
+	\section {Class hierarchy}
+	\label{sec:appendix-a}
+	
+	\begin{figure}[!ht]
+		\centering
+		\includegraphics[width=0.7\textwidth]{lvl1_classes.png}
+		\caption{\scriptsize Class Hierarchy - First Level}
+	\end{figure}
+	
+	\begin{figure}[!ht]
+		\centering
+		\includegraphics[width=0.8\textwidth]{lvl2_classes_pt1.png}
+		\caption{\scriptsize Class Hierarchy - Second Level first part}
+	\end{figure}
+	\begin{figure}[!ht]
+		\centering
+		\includegraphics[width=0.8\textwidth]{lvl2_classes_pt2.png}
+		\caption{\scriptsize Class Hierarchy - Second Level second part}
+	\end{figure}
+	
+	\begin{figure}[!ht]
+		\centering
+		\includegraphics[width=0.8\textwidth]{lvl3_classes_pt1.png}
+		\caption{\scriptsize Class Hierarchy - Third Level first part}
+	\end{figure}
+	\begin{figure}[!ht]
+		\centering
+		\includegraphics[width=0.8\textwidth]{lvl3_classes_pt2.png}
+		\caption{\scriptsize Class Hierarchy - Third Level second part}
+	\end{figure}
+	
+	\begin{figure}[!ht]
+		\centering
+		\includegraphics[width=0.8\textwidth]{lvl4_classes.png}
+		\caption{\scriptsize Class Hierarchy - Fourth Level}
+	\end{figure}
+	
+	\begin{figure}[!ht]
+		\centering
+		\includegraphics[width=0.8\textwidth]{lvl5_classes.png}
+		\caption{\scriptsize Class Hierarchy - Fifth Level}
+	\end{figure}
+
+\end{appendices}
+
 \end{document}
