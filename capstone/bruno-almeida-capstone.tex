@@ -132,6 +132,8 @@ It is essential to retain that in this project it is going to be used $AP_{50}$ 
 
 \section{Analysis}
 
+\subsection{Data Exploration}
+
 For the problem itself, there are two datasets (Image-level and bounding boxes), plus two files that describe each class used in the labeling process, and the relation among them.
 
 About the classes, there are 600 unique classes, and they are represented as a graph. So they have inheritances. All classes start from a class that I called "Entity" (it has no name, in fact), and all other classes derive from it or from the classes that derive from it on some level. \hyperref[sec:appendix-a]{In the appendix A}, I expose all connections at each level (the deepest level is five).
@@ -164,7 +166,7 @@ Besides that, the distribution of each class is not uniform. 30 classes are resp
 \begin{figure}[!ht]
 	\centering
 	\includegraphics[width=0.7\textwidth]{30-most-frequently.png}
-	\caption{\scriptsize The thirty classes with more appearance}
+	\caption{\scriptsize The thirty classes with most appearance}
 \end{figure}
 
 There are two datasets, image-level label and bounding boxes, both divided by three (train, test, cross-validation). Google explains in the blog \cite{imgdataset} how they create the Image-level dataset and how, with it, they create the bounding boxes dataset. The label-image set was created, and a little part of it (around 1.7 million images) were chosen to have more granular work. The labels previously created were relabeled and transformed in bounding boxes that identify, not only what is the object, but the position of those objects. This work only uses the bounding boxes dataset.
@@ -198,13 +200,13 @@ Beyond the label and the bounding boxes position, the dataset also has some flag
 \begin{figure}[!ht]
 	\centering
 	\includegraphics[width=1\textwidth]{isgroupof-true.png}
-	\caption{\scriptsize Class Hierarchy - Second Level second part}
+	\caption{\scriptsize Bounding Box Green represents IsGroupOf True }
 \end{figure}
 
 \begin{figure}[!ht]
 	\centering
 	\includegraphics[width=1\textwidth]{isgroupof-false.png}
-	\caption{\scriptsize Class Hierarchy - Second Level second part}
+	\caption{\scriptsize Bounding Box Green represents IsGroupOf False}
 \end{figure}
 
 "IsDepiction" represents bounding boxes that do not label the object itself, but a representation of the object. Draws, representation, costumes, are some examples.
@@ -213,11 +215,32 @@ Beyond the label and the bounding boxes position, the dataset also has some flag
 
 As stated, the distributions of classes are not uniform, and this is a big concern about how good the model will be. There is a more accurate and complete analysis, with a study of the correlations between flags and many other topics in all datasets. It can be checked in here \cite{eda}.
 
+\subsection{Techniques}
 
-\subsection{Data Exploration}
-\subsection{Exploratory Visualization}
-\subsection{Algorithms and Techniques}
+This project is about how to design and to create deep neural networks. More than that, it is going to deep dive into how convolutional neural networks work and how to use transfer learning to avoid massives trains and architecture designs.
+
+Convolutional neural networks (CNN) are neural networks with convolutional layers. Convolutional layers are layers that identify patterns in the images. In the very low levels, they find the most common patterns, as edges, and in the very deep levels, they identify the most specific patterns, as the form of a cat. These patterns are identified, creating many filters and applying filters over filters to classify more complex patterns. Besides that, we condense the filters information applied in convolutional layers with pooling layers, which have the propose of removing the useless information and keep the core information for the deep layers. \cite{cnn:1}
+
+Unlike conventional neural networks, CNNs tend to do not have layers fully connected, but only some nodes are connected. The main advantage of this technique is to have very fewer weights to calculate, which reduces drastically the computational power required to train.
+
+AlexNet \cite{AlexNet} was the first famous CNN architecture to classify images. Many others come later derived from it and newer ones, like VGG \cite{vgg}, ResNET \cite{resnet}, Inception \cite{inception} or Xception \cite{xception}.
+
+This fact is vital to the next topic this project wants to cover, Transfer Learning. Transfer Learning is a technique focused on transfer the knowledge generated in some neural network architecture, trained with some data, for a new context with a similar (could be slightly different) neural network architecture \cite{transfer-learning:1} \cite{transfer-learning:2}.
+
+This project starts the modeling process using transfer learning in some famous architectures. In the very end, it proposes an architecture not revolutionary, but good enough to solve the image detection problem.
+
 \subsection{Benchmark}
+
+This project was inspired by the Kaggle competition launched by Google, given that, It is going to use as a benchmark the leaderboard itself, \cite{leaderboard} and the goal is to achieve at least the top fifteen score.
+
+The Score evaluated is the same discussed in the metric topic of the first part of this project. 
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=0.8\textwidth]{leaderboard.png}
+	\caption{\scriptsize Leaderboard Image Dection Kaggle Competition - 2019}
+\end{figure}
+
 \section{Methodology}
 \subsection{Data Preprocessing}
 \subsection{Implementation}
