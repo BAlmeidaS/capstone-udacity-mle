@@ -9,6 +9,12 @@ from itertools import accumulate
 
 import cv2
 
+from PIL.JpegImagePlugin import JpegImageFile
+from PIL import ImageDraw, ImageFont
+
+font_path = "/usr/share/fonts/truetype/lato/Lato-Bold.ttf"
+font = ImageFont.truetype(font_path, size=20)
+
 
 def barplot(ax, title, labels, legends, *args):
     r = np.arange(len(labels))
@@ -227,3 +233,20 @@ def _create_df_percentage(df, principal, secondary):
 
     return (pd.DataFrame(arr_aux, columns=principal_values, index=secondary_values)
               .sort_index(ascending=True))
+
+
+def draw_bbox(img: JpegImageFile, bbox: pd.Series, color: tuple = (0, 255, 255)) -> JpegImageFile:
+    """Use the center, width and height to draw the bounding box"""
+    draw = ImageDraw.Draw(img)
+
+    # drawing bounding box based on the center of it
+    draw.rectangle((((bbox.cx - bbox.w/2) * img.size[0],
+                     (bbox.cy - bbox.h/2) * img.size[1]),
+                    ((bbox.cx + bbox.w/2) * img.size[0],
+                     (bbox.cy + bbox.h/2) * img.size[1])),
+                   width=2, outline=color)
+
+    draw.text(((bbox.cx - bbox.w/2) * img.size[0], (bbox.cy - bbox.h/2) * img.size[1]),
+              bbox.LabelSemantic, font=font, fill=color)
+
+    return img
