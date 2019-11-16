@@ -3,6 +3,8 @@ import seaborn as sns
 import pandas as pd
 
 from plotly import graph_objects as go
+
+from matplotlib.axes._subplots import SubplotBase
 from matplotlib import pyplot as plt
 
 from itertools import accumulate
@@ -235,18 +237,27 @@ def _create_df_percentage(df, principal, secondary):
               .sort_index(ascending=True))
 
 
-def draw_bbox(img: JpegImageFile, bbox: pd.Series, color: tuple = (0, 255, 255)) -> JpegImageFile:
+def draw_bbox(img, bbox: pd.Series,
+              gca_axes: SubplotBase = None,
+              color: tuple = (0, 255, 255)) -> SubplotBase:
     """Use the center, width and height to draw the bounding box"""
-    draw = ImageDraw.Draw(img)
 
-    # drawing bounding box based on the center of it
-    draw.rectangle((((bbox.cx - bbox.w/2) * img.size[0],
-                     (bbox.cy - bbox.h/2) * img.size[1]),
-                    ((bbox.cx + bbox.w/2) * img.size[0],
-                     (bbox.cy + bbox.h/2) * img.size[1])),
-                   width=2, outline=color)
+    if not gca_axes:
+        gca_axes = plt.gca()
 
-    draw.text(((bbox.cx - bbox.w/2) * img.size[0], (bbox.cy - bbox.h/2) * img.size[1]),
-              bbox.LabelSemantic, font=font, fill=color)
+    top_bottom_pt = ((bbox.cx - bbox.w/2) * img.size[0],
+                     (bbox.cy - bbox.h/2) * img.size[1])
 
-    return img
+    gca_axes.add_patch(plt.Rectangle(top_bottom_pt,
+                                     bbox.w * img.size[0], bbox.h * img.size[1],
+                                     color='#00ffff', fill=False, linewidth=2))
+
+    font = {'color': 'white',
+            'weight': 'bold',
+            'size': 16}
+
+    gca_axes.text(top_bottom_pt[0], top_bottom_pt[1], bbox.LabelSemantic,
+                  fontdict=font,
+                  bbox={'facecolor': '#00abab', 'alpha': 1})
+
+    return gca_axes
