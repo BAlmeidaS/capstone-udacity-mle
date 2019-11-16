@@ -1,4 +1,4 @@
-from analysis import count_recursive, find_path_to_node
+from notebooks_utils.analysis import count_recursive, node_path
 
 
 def test_count_recursive():
@@ -46,6 +46,6 @@ def test_find_path_to_node():
                      {'LabelName': '77'}
                  ]}
             ]}
-    assert find_path_to_node(tree, '77') == [('11', '55', '66', '77'),
-                                             ('11', '55', '99', '77'),
-                                             ('11', '88', '77')]
+    assert node_path(tree, '77') == [('11', '55', '66', '77'),
+                                     ('11', '55', '99', '77'),
+                                     ('11', '88', '77')]
