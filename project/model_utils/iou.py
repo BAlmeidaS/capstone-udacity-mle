@@ -52,6 +52,14 @@ def iou(a, b, epsilon=1e-7):
     Returns: int:
     """
 
+    # expand a and b array dimension
+    if len(a.shape) == 1:
+        a = np.expand_dims(a, axis=0)
+
+    if len(b.shape) == 1:
+        b = np.expand_dims(b, axis=0)
+
+    # finding the core corners
     a_ul = upper_left(a)
     a_lr = lower_right(a)
 

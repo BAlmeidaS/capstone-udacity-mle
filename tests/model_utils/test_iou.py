@@ -4,8 +4,8 @@ from numpy import testing
 
 
 def test_iou_with_1_param():
-    result = iou(np.expand_dims(np.array([2.05, 2.05, .2, .2]), axis=0),
-                 np.expand_dims(np.array([2, 2, .2, .2]), axis=0))
+    result = iou(np.array([2.05, 2.05, .2, .2]),
+                 np.array([2, 2, .2, .2]))
 
     testing.assert_array_almost_equal(result,
                                       np.array([0.39130367]),
