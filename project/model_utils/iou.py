@@ -33,7 +33,7 @@ def lower_right(v: np.array) -> (np.array, np.array):
     return v[:, 0] + v[:, 2] / 2, v[:, 1] + v[:, 3] / 2
 
 
-def iou(a, b, epsilon=1e-7):
+def iou(a: np.array, b: np.array, epsilon: float = 1e-7) -> float:
     """ Given two arrays `a` and `b` where each row contains
         a bounding box defined as a list of four numbers:
             [cx,cy,h,w]
@@ -46,10 +46,11 @@ def iou(a, b, epsilon=1e-7):
         pair of boxes.
 
     Args:
-        a:        (numpy array) each row containing [x1,y1,x2,y2]
-        b:        (numpy array) each row containing [x1,y1,x2,y2]
+        a (np.array): each row containing [cx, cy, h, w]
+        b (np.array): each row containing [cx, cy, h, w]
 
-    Returns: int:
+    Returns:
+        float: iou calculated
     """
 
     # expand a and b array dimension
