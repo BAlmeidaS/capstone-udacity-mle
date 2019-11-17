@@ -28,3 +28,12 @@ def test_iou_without_intersection():
     testing.assert_array_almost_equal(result,
                                       np.array([0]),
                                       decimal=7)
+
+
+def test_iou_with_unbalanced_params():
+    result = iou(np.array([2.05, 2.05, .2, .2]),
+                 np.array([[2, 2, .2, .2], [2, 2, .2, .2]]))
+
+    testing.assert_array_almost_equal(result,
+                                      np.array([0.39130367, 0.39130367]),
+                                      decimal=7)
