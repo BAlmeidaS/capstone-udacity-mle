@@ -239,7 +239,8 @@ def _create_df_percentage(df, principal, secondary):
 
 def draw_bbox(img, bbox: pd.Series,
               gca_axes: SubplotBase = None,
-              color: tuple = (0, 255, 255)) -> SubplotBase:
+              legend: bool = True,
+              color: str = "#00ffff") -> SubplotBase:
     """Use the center, width and height to draw the bounding box"""
 
     if not gca_axes:
@@ -250,14 +251,15 @@ def draw_bbox(img, bbox: pd.Series,
 
     gca_axes.add_patch(plt.Rectangle(top_bottom_pt,
                                      bbox.w * img.size[0], bbox.h * img.size[1],
-                                     color='#00ffff', fill=False, linewidth=2))
+                                     color=color, fill=False, linewidth=2))
 
     font = {'color': 'white',
             'weight': 'bold',
             'size': 16}
 
-    gca_axes.text(top_bottom_pt[0], top_bottom_pt[1], bbox.LabelSemantic,
-                  fontdict=font,
-                  bbox={'facecolor': '#00abab', 'alpha': 1})
+    if legend:
+        gca_axes.text(top_bottom_pt[0], top_bottom_pt[1], bbox.LabelSemantic,
+                      fontdict=font,
+                      bbox={'facecolor': '#00abab', 'alpha': 1})
 
     return gca_axes
