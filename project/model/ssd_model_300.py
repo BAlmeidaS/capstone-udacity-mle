@@ -109,4 +109,8 @@ def ssd_model_300():
     final = layers.Concatenate(axis=2)([confs_softmax, locs])
 
     model = Model(inputs=BASE_MODEL.input, output=[final])
+
+    for l in model.layers[:19]:
+        l.trainable = False
+
     return model
