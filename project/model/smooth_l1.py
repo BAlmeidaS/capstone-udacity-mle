@@ -9,4 +9,4 @@ def smooth_l1(x: np.array) -> float:
     l1_loss = tf.where(tf.less(absolute_loss, 1.0),
                        square_loss, absolute_loss - 0.5)
 
-    return tf.reduce_sum(l1_loss)
+    return l1_loss
