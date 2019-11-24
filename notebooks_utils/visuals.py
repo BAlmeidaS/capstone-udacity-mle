@@ -237,29 +237,42 @@ def _create_df_percentage(df, principal, secondary):
               .sort_index(ascending=True))
 
 
-def draw_bbox(img, bbox: pd.Series,
+def draw_bbox(img, bbox: list,
               gca_axes: SubplotBase = None,
-              legend: bool = True,
+              label: str = None,
               color: str = "#00ffff") -> SubplotBase:
     """Use the center, width and height to draw the bounding box"""
+
+    cx, cy, w, h = bbox
 
     if not gca_axes:
         gca_axes = plt.gca()
 
-    top_bottom_pt = ((bbox.cx - bbox.w/2) * img.size[0],
-                     (bbox.cy - bbox.h/2) * img.size[1])
+    top_bottom_pt = ((cx - w/2) * img.size[0],
+                     (cy - h/2) * img.size[1])
 
     gca_axes.add_patch(plt.Rectangle(top_bottom_pt,
-                                     bbox.w * img.size[0], bbox.h * img.size[1],
+                                     w * img.size[0], h * img.size[1],
                                      color=color, fill=False, linewidth=2))
 
     font = {'color': 'white',
             'weight': 'bold',
             'size': 16}
 
-    if legend:
-        gca_axes.text(top_bottom_pt[0], top_bottom_pt[1], bbox.LabelSemantic,
+    if label:
+        gca_axes.text(top_bottom_pt[0], top_bottom_pt[1], label,
                       fontdict=font,
                       bbox={'facecolor': '#00abab', 'alpha': 1})
 
+    return gca_axes
+
+
+def draw_many_bboxes(img, bboxes: np.array,
+                     gca_axes: SubplotBase = None,
+                     label: str = None,
+                     color: str = "#00ffff") -> SubplotBase:
+    """Use the center, width and height to draw the bounding box"""
+
+    for row in bboxes:
+        gca_axes = draw_bbox(img, row, gca_axes, label, color)
     return gca_axes
