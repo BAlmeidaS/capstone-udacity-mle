@@ -34,8 +34,8 @@ class StandardBoudingBoxes:
     def __init__(self):
         self.set_references()
 
-    def set_references(self, with_s2: list = [75, 39],
-                       with_s1: list = [11, 7, 5, 3]) -> pd.DataFrame:
+    def set_references(self, with_s2: list = [157, 79],
+                       with_s1: list = [21, 11, 9, 7, 5, 3]) -> pd.DataFrame:
         """Get a df with all bbox defaults defined"""
 
         refs_s2 = self._bbox(with_s2, stride=2, ratios=[1/2])
