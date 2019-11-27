@@ -31,15 +31,16 @@ def group_images(df: pd.DataFrame) -> pd.DataFrame:
 
 
 class StandardBoudingBoxes:
-    def __init__(self):
+    def __init__(self, with_s1, with_s2):
+        self.with_s1 = with_s1
+        self.with_s2 = with_s2
         self.set_references()
 
-    def set_references(self, with_s2: list = [157, 79],
-                       with_s1: list = [21, 11, 9, 7, 5, 3]) -> pd.DataFrame:
+    def set_references(self) -> pd.DataFrame:
         """Get a df with all bbox defaults defined"""
 
-        refs_s2 = self._bbox(with_s2, stride=2, ratios=[1/2])
-        refs_s1 = self._bbox(with_s1, stride=1, ratios=[1/2, 1/3])
+        refs_s2 = self._bbox(self.with_s2, stride=2, ratios=[1/2])
+        refs_s1 = self._bbox(self.with_s1, stride=1, ratios=[1/2, 1/3])
 
         self.references = (pd.concat([refs_s2, refs_s1])
                              .reset_index()[['cx', 'cy', 'w', 'h']])
