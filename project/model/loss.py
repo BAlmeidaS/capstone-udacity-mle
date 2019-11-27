@@ -6,8 +6,7 @@ from project.model.smooth_l1 import smooth_l1
 class SSDloss():
     @tf.function
     def loss(self, y_true, y_pred, *args):
-        negatives = y_true[:, :, 0]
-        positives = tf.reduce_max(y_true[:, :, 1:-4], axis=2)
+        positives = tf.reduce_max(y_true[:, :, 1:-4], axis=-1)
 
         N = tf.reduce_sum(positives, axis=-1)[0]
 
@@ -17,7 +16,6 @@ class SSDloss():
         loc = self.loc_loss(y_true, y_pred)
         conf_loss = self.conf_loss(y_true, y_pred)
 
-        negatives = y_true[:, :, 0]
         positives = tf.reduce_max(y_true[:, :, 1:-4], axis=-1)
 
         loc_loss = tf.reduce_sum(loc * tf.transpose(positives))
@@ -31,11 +29,9 @@ class SSDloss():
         return smooth_l1(z)
 
     def conf_loss(self, y_true, y_pred):
-        ln = self.log(y_true, y_pred)
-        return -tf.reduce_sum(ln * tf.transpose(y_true[:, :, :-4],
-                                               perm=[0, 1, 2]))
+        ln = self.log(y_pred)
+        return -tf.reduce_sum(y_true[:, :, :-4] * ln)
 
-
-    def log(self, y_true, y_pred):
+    def log(self, y_pred):
         return tf.math.log(tf.math.maximum(y_pred[:, :, :-4],
-                                           1e-8))
+                                           1e-15))
