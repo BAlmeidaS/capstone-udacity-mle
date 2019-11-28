@@ -6,10 +6,11 @@ import os
 # from project.utils import configs
 
 from keras.preprocessing import image
-from keras.optimizers import Adam
+from keras.optimizers import Adam, SGD
 
 import project.download_content as content
 from project.model.ssd_model_300 import ssd_model_300
+# from project.model.ssd_model_624_vgg_19 import ssd_model_624_vgg_19
 from project.model.loss import SSDloss
 
 import logging
@@ -30,8 +31,8 @@ def load_data():
 def load_model():
     model = ssd_model_300()
 
-    opt = Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999, amsgrad=False)
-    # opt = SGD(learning_rate=0.001, momentum=0.9, decay=0.0005, nesterov=False)
+    #opt = Adam(learning_rate=0.0001, beta_1=0.9, beta_2=0.999, amsgrad=False)
+    opt = SGD(learning_rate=0.00001, momentum=0.9, nesterov=False)
     ssd_loss = SSDloss()
     model.compile(optimizer=opt, loss=ssd_loss.loss)
 
@@ -46,9 +47,8 @@ def main():
 
     def gen_data():
         while True:
-            for i, y in enumerate([target[23000]]):
-                i=22000
-                img_path = X.loc[i].Path
+            for ind, y in enumerate(target):
+                img_path = X.loc[ind].Path
                 img = image.load_img('project/' + img_path, target_size=(300, 300))
                 img_arr = image.img_to_array(img)
 
@@ -57,7 +57,7 @@ def main():
 
                 yield img_arr, y
 
-    model.fit_generator(gen_data(), steps_per_epoch=128, epochs=40, workers=0)
+    model.fit_generator(gen_data(), steps_per_epoch=1, epochs=20, workers=0)
 
     model.save_weights(content.DATAPATH + '/weights300vgg16.h5')
 

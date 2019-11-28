@@ -27,7 +27,8 @@ class SSDloss():
 
     def loc_loss(self, y_true, y_pred):
         z = y_pred[:, :, -4:] - y_true[:, :, -4:]
-        return tf.reduce_sum(smooth_l1(z), axis=-1)
+        loc = tf.reduce_sum(smooth_l1(z), axis=-1)
+        return tf.where(tf.math.is_nan(loc), tf.zeros_like(loc), loc)
 
     def conf_loss_neg(self, y_true, y_pred, amount_pos):
         ln = -1 * y_true[:, :, 0] * self.log(y_pred[:, :, 0])

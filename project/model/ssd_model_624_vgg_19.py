@@ -109,7 +109,7 @@ def ssd_model_624_vgg_19(reg=0.0003):
 
     model = Model(inputs=BASE_MODEL.input, output=[final])
 
-    for l in model.layers[:19]:
-        l.trainable = False
+   # for l in model.layers[:6]:
+   #     l.trainable = False
 
     return model

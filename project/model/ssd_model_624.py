@@ -116,7 +116,7 @@ def ssd_model_624(reg=0.0003):
 
     model = Model(inputs=BASE_MODEL.input, output=[final])
 
-    for l in model.layers[:19]:
+    for l in model.layers[:21]:
         l.trainable = False
 
     return model
