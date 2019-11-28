@@ -31,19 +31,17 @@ def group_images(df: pd.DataFrame) -> pd.DataFrame:
 
 
 class StandardBoudingBoxes:
-    def __init__(self, with_s1, with_s2):
-        self.with_s1 = with_s1
-        self.with_s2 = with_s2
-        self.set_references()
+    def __init__(self, feature_map_sizes, ratios_per_layer):
+        if len(feature_map_sizes) != len(ratios_per_layer):
+            raise RuntimeError('feature map size does not match with ratios')
 
-    def set_references(self) -> pd.DataFrame:
-        """Get a df with all bbox defaults defined"""
+        max_depth = len(feature_map_sizes)
 
-        refs_s2 = self._bbox(self.with_s2, stride=2, ratios=[1/2])
-        refs_s1 = self._bbox(self.with_s1, stride=1, ratios=[1/2, 1/3])
+        arr = []
+        for i, (k, v) in enumerate(zip(feature_map_sizes, ratios_per_layer), 1):
+            arr += self._bbox(k, v, i, max_depth)
 
-        self.references = (pd.concat([refs_s2, refs_s1])
-                             .reset_index()[['cx', 'cy', 'w', 'h']])
+        self.references = pd.DataFrame(arr, columns=['cx', 'cy', 'w', 'h'])
 
     def match(self, bbox: pd.Series, iou_threshold: float = 0.5) -> np.array:
         """return all bbox default that matches with some bbox passed"""
@@ -54,19 +52,32 @@ class StandardBoudingBoxes:
         bboxs = np.where((ious == np.amax(ious)) & (ious > 0))[0]
         return bboxs
 
-    def _bbox(self, sizes, stride=1, ratios=None):
+    def _bbox(self, feature_map_size, ratios, layer_depth, max_depth):
         arr = []
-        for n in sizes:
-            e = 1 / n
 
-            t = e*3
+        step = 1/feature_map_size
 
-            for i in range(0, n-2, stride):
-                for j in range(0, n-2, stride):
-                    arr.append([e*(i+3/2), e*(j+3/2), t, t])
+        scale = self._func_scale(layer_depth, max_depth)
+        next_scale = self._func_scale(layer_depth + 1, max_depth)
 
-                    for r in ratios:
-                        arr.append([e*(i+3/2), e*(j+3/2), t*r, t])
-                    for r in ratios:
-                        arr.append([e*(i+3/2), e*(j+3/2), t, t*r])
-        return pd.DataFrame(arr, columns=['cx', 'cy', 'w', 'h'])
+        for i in range(feature_map_size):
+            for j in range(feature_map_size):
+                cx = step * (1/2 + i)
+                cy = step * (1/2 + j)
+
+                for r in ratios:
+                    w = step * scale * r ** (1/2)
+                    h = step * scale / r ** (1/2)
+                    arr.append([cx, cy, w, h])
+
+                w = step * (scale*next_scale) ** (.5)
+                h = step * (scale*next_scale) ** (.5)
+                arr.append([cx, cy, w, h])
+        return arr
+
+
+    def _func_scale(self, layer_depth, max_depth):
+        s_min = .2
+        s_max = .9
+        return s_min + ((s_max - s_min)/(max_depth - 1)) * (layer_depth - 1)
+
