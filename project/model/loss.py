@@ -6,11 +6,11 @@ from project.model.smooth_l1 import smooth_l1
 class SSDloss():
     @tf.function
     def loss(self, y_true, y_pred, *args):
-        positives = tf.reduce_max(y_true[:, :, 1:-4], axis=-1)
+        positives = tf.reduce_max(y_true[:, :, 1:-4], axis=1)
 
-        N = tf.reduce_sum(positives, axis=-1)[0]
+        N = tf.reduce_max(positives)
 
-        if tf.equal(N, 0):
+        if N == 0:
             return tf.convert_to_tensor(0, dtype=tf.float32)
 
         loc = self.loc_loss(y_true, y_pred)
