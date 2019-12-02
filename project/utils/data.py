@@ -49,7 +49,7 @@ class StandardBoudingBoxes:
         ious = iou(bbox.values, self.references.values)
         ious[ious < iou_threshold] = 0
 
-        bboxs = np.where((ious == np.amax(ious)) & (ious > 0))[0]
+        bboxs = np.where(ious > 0)[0]
         return bboxs
 
     def _bbox(self, feature_map_size, ratios, layer_depth, max_depth):
