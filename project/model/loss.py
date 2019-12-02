@@ -1,14 +1,29 @@
 import tensorflow as tf
 
-from project.model.smooth_l1 import smooth_l1
+import numpy as np
 
+from project.model.smooth_l1 import smooth_l1
+from project.utils import data
+
+STANDARD_BBOXES = np.expand_dims(
+    (data.StandardBoudingBoxes(feature_map_sizes=[38, 19, 10, 5, 3, 1],
+                               ratios_per_layer=[[1, 1/2, 2],
+                                                 [1, 1/2, 1/3, 2, 3],
+                                                 [1, 1/2, 1/3, 2, 3],
+                                                 [1, 1/2, 1/3, 2, 3],
+                                                 [1, 1/2, 2],
+                                                 [1, 1/2, 2]])
+         .references),
+    axis=0)
+
+MINCONST=1e-15
 
 class SSDloss():
     @tf.function
     def loss(self, y_true, y_pred, *args):
-        positives = tf.reduce_max(y_true[:, :, 1:-4], axis=1)
+        positives = tf.reduce_sum(y_true[:, :, 1:-4], axis=1)
 
-        N = tf.reduce_max(positives)
+        N = tf.reduce_sum(positives)
 
         if N == 0:
             return tf.convert_to_tensor(0, dtype=tf.float32)
@@ -23,10 +38,39 @@ class SSDloss():
 
         loss = (conf_loss_pos + conf_loss_neg + 1 * loc_loss) / N
 
+        # result = tf.cond(tf.equal(N, 0), lambda: 0.0, lambda: loss)
+
         return tf.convert_to_tensor(loss, dtype=tf.float32)
 
+    def g_hat(self, loc_raw):
+        loc = tf.where(tf.math.is_nan(loc_raw), tf.zeros_like(loc_raw), loc_raw)
+
+        g_hat_cx = tf.math.divide_no_nan(tf.math.subtract(loc[:, :, 0],
+                                                          STANDARD_BBOXES[:, :, 0]),
+                                         STANDARD_BBOXES[:, :, 2])
+
+        g_hat_cy = tf.math.divide_no_nan(tf.math.subtract(loc[:, :, 1],
+                                                          STANDARD_BBOXES[:, :, 1]),
+                                         STANDARD_BBOXES[:, :, 3])
+
+        g_hat_w = tf.math.log(
+            tf.math.maximum(tf.math.divide_no_nan(loc[:, :, 2],
+                                                  STANDARD_BBOXES[:, :, 2]),
+                            MINCONST))
+
+        g_hat_h = tf.math.log(
+            tf.math.maximum(tf.math.divide_no_nan(loc[:, :, 3],
+                                                  STANDARD_BBOXES[:, :, 3]),
+                            MINCONST))
+      #  tf.print(loc)
+      #  tf.print(STANDARD_BBOXES)
+      #  tf.print(g_hat_cx)
+
+        return tf.stack([g_hat_cx, g_hat_cy, g_hat_w, g_hat_h], axis=-1)
+
     def loc_loss(self, y_true, y_pred):
-        z = y_pred[:, :, -4:] - y_true[:, :, -4:]
+        z = self.g_hat(y_pred[:, :, -4:]) - self.g_hat(y_true[:, :, -4:])
+      #  tf.print(z)
         loc = tf.reduce_sum(smooth_l1(z), axis=-1)
         return tf.where(tf.math.is_nan(loc), tf.zeros_like(loc), loc)
 
@@ -44,4 +88,4 @@ class SSDloss():
                 tf.math.count_nonzero(y_true[:, :, 1:-4]))
 
     def log(self, y_pred):
-        return tf.math.log(tf.math.maximum(y_pred, 1e-15))
+        return tf.math.log(tf.math.maximum(y_pred, MINCONST))
