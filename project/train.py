@@ -66,7 +66,6 @@ def main():
             for i, (x, y) in enumerate(gen_data()):
                 if i % batch_size == 0:
                     if batch_x is not None and batch_y is not None:
-                        import ipdb; ipdb.set_trace()
                         yield batch_x, batch_y
 
                     batch_x = x
@@ -75,7 +74,6 @@ def main():
 
                 batch_x = np.concatenate([batch_x, x], axis=0)
                 batch_y = np.concatenate([batch_y, y], axis=0)
-
 
     model.fit_generator(batch_gen_data(),
                         steps_per_epoch=128,
