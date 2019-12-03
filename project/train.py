@@ -32,8 +32,8 @@ def load_data():
 def load_model():
     model = ssd_model_300()
 
-    opt = Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999, amsgrad=False)
-    # opt = SGD(learning_rate=1e10-3, momentum=0.9, nesterov=False)
+    #opt = Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999, amsgrad=False)
+    opt = SGD(learning_rate=1e-5, momentum=0.5, nesterov=False)
     ssd_loss = SSDloss()
     model.compile(optimizer=opt, loss=ssd_loss.loss)
 
@@ -56,7 +56,8 @@ def main():
                 img_arr = np.expand_dims(img_arr, axis=0)
                 y = np.expand_dims(y, axis=0)
 
-                yield img_arr, y
+                # yield img_arr, y
+                yield ((img_arr - np.mean(img_arr)) / (np.std(img_arr) + 1e-15)), y
 
     def batch_gen_data():
         while True:
@@ -76,8 +77,8 @@ def main():
                 batch_y = np.concatenate([batch_y, y], axis=0)
 
     model.fit_generator(batch_gen_data(),
-                        steps_per_epoch=128,
-                        epochs=40,
+                        steps_per_epoch=64,
+                        epochs=100,
                         workers=0)
 
     model.save_weights(content.DATAPATH + '/weights300vgg16.h5')
