@@ -9,7 +9,7 @@ VGG = VGG16(weights='imagenet', include_top=False, input_shape=(300, 300, 3))
 BASE_MODEL = Model(inputs=VGG.input, outputs=VGG.get_layer('block5_conv3').output)
 
 
-def ssd_model_300(reg=0.003):
+def ssd_model_300(reg=0.00003):
     conv4_3 = layers.ZeroPadding2D(padding=((0, 1), (0, 1)), name='conv4_3_padding')(BASE_MODEL.layers[-5].output)
 
     pool4 = layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='same', name='pool4')(conv4_3)
