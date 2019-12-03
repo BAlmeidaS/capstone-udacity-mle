@@ -18,6 +18,8 @@ STANDARD_BBOXES = np.expand_dims(
 
 MINCONST = 1e-15
 
+verbose = False
+
 
 class SSDloss():
     @tf.function
@@ -39,32 +41,35 @@ class SSDloss():
         # tf.print('positives_count: ', N)
 
         # for i in [6423, 8035, 8697, 8699, 8700, 8703, 8728, 8729, 8730, 8731]:
+        #     tf.print(f'  {i} pred: ', y_pred[0][i][-4:])
         #     tf.print(f'  {i} loc: ', loc[0][i])
         #     tf.print(f'  {i} positives: ', positives[0][i])
         #     tf.print(f'  {i} mult: ', (loc * positives)[0][i])
         #     tf.print()
 
         loc_loss = tf.reduce_sum(loc * positives)
-        # tf.print('loc_loss: ', loc_loss)
-        # tf.print('conf_loss_pos: ', conf_loss_pos)
-        # tf.print('conf_loss_neg: ', conf_loss_neg)
 
         loss = (conf_loss_pos + conf_loss_neg + 1 * loc_loss) / N
         # tf.print('loss: ', loss)
+        if verbose:
+            tf.print('pred: ', y_pred[:, :, -4:])
+            tf.print('loc_loss: ', loc_loss)
+            tf.print('conf_loss_pos: ', conf_loss_pos)
+            tf.print('conf_loss_neg: ', conf_loss_neg)
+            tf.print('\n\n')
 
         # result = tf.cond(tf.equal(N, 0), lambda: 0.0, lambda: loss)
 
-        # tf.print('\n\n')
         return tf.convert_to_tensor(loss, dtype=tf.float32)
 
     def g_hat(self, loc):
-        g_hat_cx = tf.math.divide(tf.math.subtract(loc[:, :, 0],
-                                                   STANDARD_BBOXES[:, :, 0]),
-                                  STANDARD_BBOXES[:, :, 2])
+        g_hat_cx = tf.math.divide_no_nan(tf.math.subtract(loc[:, :, 0],
+                                                          STANDARD_BBOXES[:, :, 0]),
+                                         STANDARD_BBOXES[:, :, 2])
 
-        g_hat_cy = tf.math.divide(tf.math.subtract(loc[:, :, 1],
-                                                   STANDARD_BBOXES[:, :, 1]),
-                                  STANDARD_BBOXES[:, :, 3])
+        g_hat_cy = tf.math.divide_no_nan(tf.math.subtract(loc[:, :, 1],
+                                                          STANDARD_BBOXES[:, :, 1]),
+                                         STANDARD_BBOXES[:, :, 3])
 
         g_hat_w = tf.math.log(
             tf.math.maximum(tf.math.divide_no_nan(loc[:, :, 2],
