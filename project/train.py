@@ -58,7 +58,29 @@ def main():
 
                 yield img_arr, y
 
-    model.fit_generator(gen_data(), steps_per_epoch=256, epochs=150, workers=0)
+    def batch_gen_data():
+        while True:
+            batch_x, batch_y = None, None
+            batch_size = 8
+
+            for i, (x, y) in enumerate(gen_data()):
+                if i % batch_size == 0:
+                    if batch_x is not None and batch_y is not None:
+                        import ipdb; ipdb.set_trace()
+                        yield batch_x, batch_y
+
+                    batch_x = x
+                    batch_y = y
+                    continue
+
+                batch_x = np.concatenate([batch_x, x], axis=0)
+                batch_y = np.concatenate([batch_y, y], axis=0)
+
+
+    model.fit_generator(batch_gen_data(),
+                        steps_per_epoch=128,
+                        epochs=40,
+                        workers=0)
 
     model.save_weights(content.DATAPATH + '/weights300vgg16.h5')
 
