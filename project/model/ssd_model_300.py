@@ -1,5 +1,6 @@
 from keras.applications import VGG16
 from keras.models import Model
+from keras.initializers import RandomUniform
 
 from keras.regularizers import l2
 
@@ -9,56 +10,61 @@ VGG = VGG16(weights='imagenet', include_top=False, input_shape=(300, 300, 3))
 BASE_MODEL = Model(inputs=VGG.input, outputs=VGG.get_layer('block5_conv3').output)
 
 
+initializer = RandomUniform(minval=-1e-2, maxval=1e-2)
+# activation = layers.LeakyReLU(alpha=0.1)
+activation = 'relu'
+
+
 def ssd_model_300(reg=0.00003):
     conv4_3 = layers.ZeroPadding2D(padding=((0, 1), (0, 1)), name='conv4_3_padding')(BASE_MODEL.layers[-5].output)
 
     pool4 = layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='same', name='pool4')(conv4_3)
 
-    conv5_1 = layers.Conv2D(512, (3, 3), activation='relu', padding='same', kernel_regularizer=l2(reg),
-                            kernel_initializer='he_normal', name='conv5_1')(pool4)
-    conv5_2 = layers.Conv2D(512, (3, 3), activation='relu', padding='same', kernel_regularizer=l2(reg),
-                            kernel_initializer='he_normal', name='conv5_2')(conv5_1)
-    conv5_3 = layers.Conv2D(512, (3, 3), activation='relu', padding='same', kernel_regularizer=l2(reg),
-                            kernel_initializer='he_normal', name='conv5_3')(conv5_2)
+    conv5_1 = layers.Conv2D(512, (3, 3), activation=activation, padding='same', kernel_regularizer=l2(reg),
+                            kernel_initializer=initializer, name='conv5_1')(pool4)
+    conv5_2 = layers.Conv2D(512, (3, 3), activation=activation, padding='same', kernel_regularizer=l2(reg),
+                            kernel_initializer=initializer, name='conv5_2')(conv5_1)
+    conv5_3 = layers.Conv2D(512, (3, 3), activation=activation, padding='same', kernel_regularizer=l2(reg),
+                            kernel_initializer=initializer, name='conv5_3')(conv5_2)
 
-#    pool5 = layers.MaxPooling2D(pool_size=(3, 3), strides=(1, 1),
-#                                padding='same', name='pool5')(conv5_3)
+    pool5 = layers.MaxPooling2D(pool_size=(3, 3), strides=(1, 1),
+                                padding='same', name='pool5')(conv5_3)
 
-    fc6 = layers.Conv2D(1024, (3, 3), dilation_rate=(6, 6), activation='relu', kernel_regularizer=l2(reg),
-                        padding='same', kernel_initializer='he_normal', name='fc6')(conv5_3)
+    fc6 = layers.Conv2D(1024, (3, 3), dilation_rate=(6, 6), activation=activation, kernel_regularizer=l2(reg),
+                        padding='same', kernel_initializer=initializer, name='fc6')(pool5)
 
-    fc7 = layers.Conv2D(1024, (1, 1), activation='relu', padding='same', kernel_regularizer=l2(reg),
-                        kernel_initializer='he_normal', name='fc7')(fc6)
+    fc7 = layers.Conv2D(1024, (1, 1), activation=activation, padding='same', kernel_regularizer=l2(reg),
+                        kernel_initializer=initializer, name='fc7')(fc6)
 
-    conv8_1 = layers.Conv2D(256, (1, 1), activation='relu', padding='same', kernel_regularizer=l2(reg),
-                            kernel_initializer='he_normal', name='conv8_1')(fc7)
-    conv8_2 = layers.Conv2D(512, (3, 3), strides=(2, 2), activation='relu', kernel_regularizer=l2(reg),
-                            padding='same', kernel_initializer='he_normal', name='conv8_2')(conv8_1)
+    conv8_1 = layers.Conv2D(256, (1, 1), activation=activation, padding='same', kernel_regularizer=l2(reg),
+                            kernel_initializer=initializer, name='conv8_1')(fc7)
+    conv8_2 = layers.Conv2D(512, (3, 3), strides=(2, 2), activation=activation, kernel_regularizer=l2(reg),
+                            padding='same', kernel_initializer=initializer, name='conv8_2')(conv8_1)
 
-    conv9_1 = layers.Conv2D(128, (1, 1), activation='relu', padding='same', kernel_regularizer=l2(reg),
-                            kernel_initializer='he_normal', name='conv9_1')(conv8_2)
-    conv9_2 = layers.Conv2D(256, (3, 3), strides=(2, 2), activation='relu', padding='same', kernel_regularizer=l2(reg),
-                            kernel_initializer='he_normal', name='conv9_2')(conv9_1)
+    conv9_1 = layers.Conv2D(128, (1, 1), activation=activation, padding='same', kernel_regularizer=l2(reg),
+                            kernel_initializer=initializer, name='conv9_1')(conv8_2)
+    conv9_2 = layers.Conv2D(256, (3, 3), strides=(2, 2), activation=activation, padding='same', kernel_regularizer=l2(reg),
+                            kernel_initializer=initializer, name='conv9_2')(conv9_1)
 
-    conv10_1 = layers.Conv2D(128, (1, 1), activation='relu', padding='same', kernel_regularizer=l2(reg),
-                             kernel_initializer='he_normal', name='conv10_1')(conv9_2)
-    conv10_2 = layers.Conv2D(256, (3, 3), strides=(1, 1), activation='relu', kernel_regularizer=l2(reg),
-                             padding='valid', kernel_initializer='he_normal', name='conv10_2')(conv10_1)
+    conv10_1 = layers.Conv2D(128, (1, 1), activation=activation, padding='same', kernel_regularizer=l2(reg),
+                             kernel_initializer=initializer, name='conv10_1')(conv9_2)
+    conv10_2 = layers.Conv2D(256, (3, 3), strides=(1, 1), activation=activation, kernel_regularizer=l2(reg),
+                             padding='valid', kernel_initializer=initializer, name='conv10_2')(conv10_1)
 
-    conv11_1 = layers.Conv2D(128, (1, 1), activation='relu', padding='same', kernel_regularizer=l2(reg),
-                             kernel_initializer='he_normal', name='conv11_1')(conv10_2)
-    conv11_2 = layers.Conv2D(256, (3, 3), strides=(1, 1), activation='relu', kernel_regularizer=l2(reg),
-                             padding='valid', kernel_initializer='he_normal', name='conv11_2')(conv11_1)
+    conv11_1 = layers.Conv2D(128, (1, 1), activation=activation, padding='same', kernel_regularizer=l2(reg),
+                             kernel_initializer=initializer, name='conv11_1')(conv10_2)
+    conv11_2 = layers.Conv2D(256, (3, 3), strides=(1, 1), activation=activation, kernel_regularizer=l2(reg),
+                             padding='valid', kernel_initializer=initializer, name='conv11_2')(conv11_1)
 
-    # conv12_1 = layers.Conv2D(128, (1, 1), activation='relu', padding='same',
-    #                          kernel_initializer='he_normal', name='conv12_1')(conv11_2)
-    # conv12_2 = layers.Conv2D(256, (3, 3), strides=(1, 1), activation='relu',
-    #                          padding='valid', kernel_initializer='he_normal', name='conv12_2')(conv12_1)
+    # conv12_1 = layers.Conv2D(128, (1, 1), activation=activation, padding='same',
+    #                          kernel_initializer=initializer, name='conv12_1')(conv11_2)
+    # conv12_2 = layers.Conv2D(256, (3, 3), strides=(1, 1), activation=activation,
+    #                          padding='valid', kernel_initializer=initializer, name='conv12_2')(conv12_1)
 
-    # conv13_1 = layers.Conv2D(128, (1, 1), activation='relu', padding='same',
-    #                          kernel_initializer='he_normal', name='conv13_1')(conv12_2)
-    # conv13_2 = layers.Conv2D(256, (3, 3), strides=(1, 1), activation='relu',
-    #                          padding='valid', kernel_initializer='he_normal', name='conv13_2')(conv13_1)
+    # conv13_1 = layers.Conv2D(128, (1, 1), activation=activation, padding='same',
+    #                          kernel_initializer=initializer, name='conv13_1')(conv12_2)
+    # conv13_2 = layers.Conv2D(256, (3, 3), strides=(1, 1), activation=activation,
+    #                          padding='valid', kernel_initializer=initializer, name='conv13_2')(conv13_1)
 
     # defining locs
     loc_1 = layers.Conv2D(4 * 4, (3, 3), padding='same', name='1st_bbs')(conv4_3)
