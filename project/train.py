@@ -7,7 +7,7 @@ import os
 
 from keras.preprocessing import image
 from keras.optimizers import SGD
-# from keras.optimizers import Adam
+from keras.optimizers import Adam
 
 import project.download_content as content
 from project.model.ssd_model_300 import ssd_model_300
@@ -32,8 +32,8 @@ def load_data():
 def load_model():
     model = ssd_model_300()
 
-    # opt = Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999, amsgrad=False)
-    opt = SGD(learning_rate=0.000001, momentum=0.9, nesterov=False)
+    opt = Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999, amsgrad=False)
+    # opt = SGD(learning_rate=1e10-3, momentum=0.9, nesterov=False)
     ssd_loss = SSDloss()
     model.compile(optimizer=opt, loss=ssd_loss.loss)
 
@@ -58,7 +58,7 @@ def main():
 
                 yield img_arr, y
 
-    model.fit_generator(gen_data(), steps_per_epoch=256, epochs=50, workers=0)
+    model.fit_generator(gen_data(), steps_per_epoch=256, epochs=150, workers=0)
 
     model.save_weights(content.DATAPATH + '/weights300vgg16.h5')
 
