@@ -1,6 +1,7 @@
 import h5py
 import pandas as pd
 import numpy as np
+import tensorflow as tf
 import os
 
 # from project.utils import configs
@@ -12,7 +13,7 @@ from keras.optimizers import Adam
 import project.download_content as content
 from project.model.ssd_model_300 import ssd_model_300
 # from project.model.ssd_model_624_vgg_19 import ssd_model_624_vgg_19
-from project.model.loss import SSDloss
+from project.model.loss import SSDloss, BBOX_REF
 
 import logging
 logging.getLogger().setLevel(logging.INFO)
@@ -26,18 +27,210 @@ def load_data():
     with h5py.File(filepath, 'r') as f:
         target = f['y'][:]
 
-    return X[['ImageID', 'Path']], target
+    return X, target
 
 
 def load_model():
     model = ssd_model_300()
 
-    #opt = Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999, amsgrad=False)
+    # opt = Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999, amsgrad=False)
     opt = SGD(learning_rate=1e-5, momentum=0.5, nesterov=False)
     ssd_loss = SSDloss()
     model.compile(optimizer=opt, loss=ssd_loss.loss)
 
     return model
+
+
+def match_bbox(x, y):
+    for cx, cy, w, h, *labels in zip(x.cx, x.cy, x.w, x.h, *x[8:]):
+        bboxs = BBOX_REF.match(pd.DataFrame({'cx': [cx],
+                                             'cy': [cy],
+                                             'w': [w],
+                                             'h': [h]}).loc[0])
+        for i in bboxs:
+            y[i] = [0] + labels + [cx, cy, w, h]
+
+    return y
+
+
+def resize(img, x, p=.7, delta_x=0, delta_y=0):
+    lb = (1.0 - p) / 2.0
+    hb = 1.0 - lb
+
+    if delta_x > lb or delta_y > lb:
+        raise RuntimeError("Delta X or Delta Y can't be greater than the half of (1 - proportion)")
+
+    bboxes = find_bbox(x, p, delta_x, delta_y)
+
+    return (tf.image.crop_and_resize(np.expand_dims(img, axis=0),
+                                     [[delta_x + lb,
+                                       delta_y + lb,
+                                       delta_x + hb,
+                                       delta_y + hb]],
+                                     [0],
+                                     [300, 300])[0],
+            bboxes)
+
+
+def resize_params(x, p=.7, delta_x=0.0, delta_y=0.0):
+    cx_0, cy_0, w_0, h_0 = x
+
+    step = (1.0 - p) / 2.0
+    cx = (cx_0 - delta_x - step) / p
+    cy = (cy_0 - delta_y - step) / p
+    w = w_0 / p
+    h = h_0 / p
+
+    return [cx, cy, w, h]
+
+
+def append_if_valid(bboxes, cx, cy, w, h, *classes):
+    if cx > (1 - w/2) or cx < w/2 or w > 1 or w < 0:
+        return
+    if cy > (1 - h/2) or cy < h/2 or h > 1 or h < 0:
+        return
+
+    bboxes.append([cx, cy, w, h, *classes])
+
+
+def find_bbox(x, p=.7, delta_x=0.0, delta_y=0.0):
+    bboxes = []
+    for cx, cy, w, h, *classes in zip(x.cx, x.cy, x.w, x.h, *x[8:]):
+        n_cx, n_cy, n_w, n_h = resize_params([cx, cy, w, h], p, delta_x, delta_y)
+        append_if_valid(bboxes, n_cx, n_cy, n_w, n_h, *classes)
+
+    if len(bboxes) == 0:
+        raise ValueError('No bounding boxes in new image')
+    return np.array(bboxes)
+
+
+def data_augmentation(ind, X, y):
+    x = X.iloc[ind]
+
+    img_path = x.Path
+    img_b = image.load_img('project/' + img_path, target_size=(300, 300))
+
+    img = image.img_to_array(img_b)
+
+    yield img, y
+
+    # flip horizontaly
+    y[:] = [1] + [0] * (y.shape[1] - 1)
+
+    img_flip_h = np.flip(img, 1)
+    x.cx = np.subtract(1, x.cx)
+    y = match_bbox(x, y)
+
+    yield img_flip_h, y
+
+    # flip verticaly
+    y[:] = [1] + [0] * (y.shape[1] - 1)
+
+    img_flip_v = np.flip(img, 0)
+    x.cy = np.subtract(1, x.cy)
+    y = match_bbox(x, y)
+
+    yield img_flip_v, y
+
+    # flip vertically and horizontaly
+    y[:] = [1] + [0] * (y.shape[1] - 1)
+
+    img_flip_h_v = np.flip(img, [0, 1])
+    x.cx = np.subtract(1, x.cx)
+    x.cy = np.subtract(1, x.cy)
+    y = match_bbox(x, y)
+
+    yield img_flip_h_v, y
+
+    # zoom in center
+    try:
+        y[:] = [1] + [0] * (y.shape[1] - 1)
+
+        img_z1, bboxes = resize(img, x, .84, .079, .079)
+        x.cx = bboxes[:, 0]
+        x.cy = bboxes[:, 1]
+        x.w = bboxes[:, 2]
+        x.h = bboxes[:, 3]
+        y = match_bbox(x, y)
+
+        yield img_z1, y
+    except ValueError:
+        pass
+
+    # zoom in center 2
+    try:
+        y[:] = [1] + [0] * (y.shape[1] - 1)
+
+        img_z2, bboxes = resize(img, x, .7, .149, .149)
+        x.cx = bboxes[:, 0]
+        x.cy = bboxes[:, 1]
+        x.w = bboxes[:, 2]
+        x.h = bboxes[:, 3]
+        y = match_bbox(x, y)
+
+        yield img_z2, y
+    except ValueError:
+        pass
+
+    # zoom in top left
+    try:
+        y[:] = [1] + [0] * (y.shape[1] - 1)
+
+        img_z3, bboxes = resize(img, x, .8, -0.09, -.099)
+        x.cx = bboxes[:, 0]
+        x.cy = bboxes[:, 1]
+        x.w = bboxes[:, 2]
+        x.h = bboxes[:, 3]
+        y = match_bbox(x, y)
+
+        yield img_z3, y
+    except ValueError:
+        pass
+
+    # zoom in top right
+    try:
+        y[:] = [1] + [0] * (y.shape[1] - 1)
+
+        img_z4, bboxes = resize(img, x, .8, .099, -.099)
+        x.cx = bboxes[:, 0]
+        x.cy = bboxes[:, 1]
+        x.w = bboxes[:, 2]
+        x.h = bboxes[:, 3]
+        y = match_bbox(x, y)
+
+        yield img_z4, y
+    except ValueError:
+        pass
+
+    # zoom in bottom left
+    try:
+        y[:] = [1] + [0] * (y.shape[1] - 1)
+
+        img_z5, bboxes = resize(img, x, .8, -.099, .099)
+        x.cx = bboxes[:, 0]
+        x.cy = bboxes[:, 1]
+        x.w = bboxes[:, 2]
+        x.h = bboxes[:, 3]
+        y = match_bbox(x, y)
+
+        yield img_z5, y
+    except ValueError:
+        pass
+
+    # zoom in bottom right
+    try:
+        y[:] = [1] + [0] * (y.shape[1] - 1)
+
+        img_z6, bboxes = resize(img, x, .8, .099, .099)
+        x.cx = bboxes[:, 0]
+        x.cy = bboxes[:, 1]
+        x.w = bboxes[:, 2]
+        x.h = bboxes[:, 3]
+        y = match_bbox(x, y)
+
+        yield img_z6, y
+    except ValueError:
+        pass
 
 
 def main():
@@ -49,20 +242,23 @@ def main():
     def gen_data():
         while True:
             for ind, y in enumerate(target):
-                img_path = X.iloc[ind].Path
-                img = image.load_img('project/' + img_path, target_size=(300, 300))
-                img_arr = image.img_to_array(img)
+                data_generator = data_augmentation(ind, X, y)
 
-                img_arr = np.expand_dims(img_arr, axis=0)
-                y = np.expand_dims(y, axis=0)
+                while True:
+                    try:
+                        img, y = next(data_generator)
 
-                # yield img_arr, y
-                yield ((img_arr - np.mean(img_arr)) / (np.std(img_arr) + 1e-15)), y
+                        img = np.expand_dims(img, axis=0)
+                        y = np.expand_dims(y, axis=0)
+
+                        yield ((img - np.mean(img)) / (np.std(img) + 1e-15)), y
+                    except StopIteration:
+                        break
 
     def batch_gen_data():
         while True:
             batch_x, batch_y = None, None
-            batch_size = 8
+            batch_size = 16
 
             for i, (x, y) in enumerate(gen_data()):
                 if i % batch_size == 0:
@@ -77,8 +273,8 @@ def main():
                 batch_y = np.concatenate([batch_y, y], axis=0)
 
     model.fit_generator(batch_gen_data(),
-                        steps_per_epoch=64,
-                        epochs=100,
+                        steps_per_epoch=128,
+                        epochs=160,
                         workers=0)
 
     model.save_weights(content.DATAPATH + '/weights300vgg16.h5')
