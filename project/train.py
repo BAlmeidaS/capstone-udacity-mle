@@ -151,7 +151,7 @@ def data_augmentation(ind, X, y):
     try:
         y[:] = [1] + [0] * (y.shape[1] - 1)
 
-        img_z1, bboxes = resize(img, x, .84, .079, .079)
+        img_z, bboxes = resize(img, x, .84, .079, .079)
         x.cx = bboxes[:, 0]
         x.cy = bboxes[:, 1]
         x.w = bboxes[:, 2]
@@ -160,7 +160,7 @@ def data_augmentation(ind, X, y):
             x[8+i] = r
         y = match_bbox(x, y)
 
-        yield img_z1, y
+        yield img_z, y
     except ValueError:
         pass
 
@@ -168,7 +168,7 @@ def data_augmentation(ind, X, y):
     try:
         y[:] = [1] + [0] * (y.shape[1] - 1)
 
-        img_z2, bboxes = resize(img, x, .7, .149, .149)
+        img_z, bboxes = resize(img, x, .7, .149, .149)
         x.cx = bboxes[:, 0]
         x.cy = bboxes[:, 1]
         x.w = bboxes[:, 2]
@@ -177,7 +177,24 @@ def data_augmentation(ind, X, y):
             x[8+i] = r
         y = match_bbox(x, y)
 
-        yield img_z2, y
+        yield img_z, y
+    except ValueError:
+        pass
+
+    # zoom in center 3
+    try:
+        y[:] = [1] + [0] * (y.shape[1] - 1)
+
+        img_z, bboxes = resize(img, x, .6, 0, 0)
+        x.cx = bboxes[:, 0]
+        x.cy = bboxes[:, 1]
+        x.w = bboxes[:, 2]
+        x.h = bboxes[:, 3]
+        for i, r in enumerate(bboxes[:, 4:].T):
+            x[8+i] = r
+        y = match_bbox(x, y)
+
+        yield img_z, y
     except ValueError:
         pass
 
@@ -185,7 +202,7 @@ def data_augmentation(ind, X, y):
     try:
         y[:] = [1] + [0] * (y.shape[1] - 1)
 
-        img_z3, bboxes = resize(img, x, .8, -0.09, -.099)
+        img_z, bboxes = resize(img, x, .8, -0.09, -.099)
         x.cx = bboxes[:, 0]
         x.cy = bboxes[:, 1]
         x.w = bboxes[:, 2]
@@ -194,7 +211,7 @@ def data_augmentation(ind, X, y):
             x[8+i] = r
         y = match_bbox(x, y)
 
-        yield img_z3, y
+        yield img_z, y
     except ValueError:
         pass
 
@@ -202,7 +219,7 @@ def data_augmentation(ind, X, y):
     try:
         y[:] = [1] + [0] * (y.shape[1] - 1)
 
-        img_z4, bboxes = resize(img, x, .8, .099, -.099)
+        img_z, bboxes = resize(img, x, .8, .099, -.099)
         x.cx = bboxes[:, 0]
         x.cy = bboxes[:, 1]
         x.w = bboxes[:, 2]
@@ -211,7 +228,7 @@ def data_augmentation(ind, X, y):
             x[8+i] = r
         y = match_bbox(x, y)
 
-        yield img_z4, y
+        yield img_z, y
     except ValueError:
         pass
 
@@ -219,7 +236,7 @@ def data_augmentation(ind, X, y):
     try:
         y[:] = [1] + [0] * (y.shape[1] - 1)
 
-        img_z5, bboxes = resize(img, x, .8, -.099, .099)
+        img_z, bboxes = resize(img, x, .8, -.099, .099)
         x.cx = bboxes[:, 0]
         x.cy = bboxes[:, 1]
         x.w = bboxes[:, 2]
@@ -228,7 +245,7 @@ def data_augmentation(ind, X, y):
             x[8+i] = r
         y = match_bbox(x, y)
 
-        yield img_z5, y
+        yield img_z, y
     except ValueError:
         pass
 
@@ -236,7 +253,7 @@ def data_augmentation(ind, X, y):
     try:
         y[:] = [1] + [0] * (y.shape[1] - 1)
 
-        img_z6, bboxes = resize(img, x, .8, .099, .099)
+        img_z, bboxes = resize(img, x, .8, .099, .099)
         x.cx = bboxes[:, 0]
         x.cy = bboxes[:, 1]
         x.w = bboxes[:, 2]
@@ -245,7 +262,75 @@ def data_augmentation(ind, X, y):
             x[8+i] = r
         y = match_bbox(x, y)
 
-        yield img_z6, y
+        yield img_z, y
+    except ValueError:
+        pass
+
+    # zoom in top left 2
+    try:
+        y[:] = [1] + [0] * (y.shape[1] - 1)
+
+        img_z, bboxes = resize(img, x, .6, -.2, -.2)
+        x.cx = bboxes[:, 0]
+        x.cy = bboxes[:, 1]
+        x.w = bboxes[:, 2]
+        x.h = bboxes[:, 3]
+        for i, r in enumerate(bboxes[:, 4:].T):
+            x[8+i] = r
+        y = match_bbox(x, y)
+
+        yield img_z, y
+    except ValueError:
+        pass
+
+    # zoom in top right 2
+    try:
+        y[:] = [1] + [0] * (y.shape[1] - 1)
+
+        img_z, bboxes = resize(img, x, .6, .2, -.2)
+        x.cx = bboxes[:, 0]
+        x.cy = bboxes[:, 1]
+        x.w = bboxes[:, 2]
+        x.h = bboxes[:, 3]
+        for i, r in enumerate(bboxes[:, 4:].T):
+            x[8+i] = r
+        y = match_bbox(x, y)
+
+        yield img_z, y
+    except ValueError:
+        pass
+
+    # zoom in bottom left 2
+    try:
+        y[:] = [1] + [0] * (y.shape[1] - 1)
+
+        img_z, bboxes = resize(img, x, .6, -.2, .2)
+        x.cx = bboxes[:, 0]
+        x.cy = bboxes[:, 1]
+        x.w = bboxes[:, 2]
+        x.h = bboxes[:, 3]
+        for i, r in enumerate(bboxes[:, 4:].T):
+            x[8+i] = r
+        y = match_bbox(x, y)
+
+        yield img_z, y
+    except ValueError:
+        pass
+
+    # zoom in bottom right 2
+    try:
+        y[:] = [1] + [0] * (y.shape[1] - 1)
+
+        img_z, bboxes = resize(img, x, .6, .2, .2)
+        x.cx = bboxes[:, 0]
+        x.cy = bboxes[:, 1]
+        x.w = bboxes[:, 2]
+        x.h = bboxes[:, 3]
+        for i, r in enumerate(bboxes[:, 4:].T):
+            x[8+i] = r
+        y = match_bbox(x, y)
+
+        yield img_z, y
     except ValueError:
         pass
 
@@ -291,7 +376,7 @@ def main():
 
     model.fit_generator(batch_gen_data(),
                         steps_per_epoch=128,
-                        epochs=160,
+                        epochs=240,
                         workers=0)
 
     model.save_weights(content.DATAPATH + '/weights300vgg16.h5')
