@@ -81,8 +81,8 @@ def resize_params(x, p=.7, delta_x=0.0, delta_y=0.0):
     cx_0, cy_0, w_0, h_0 = x
 
     step = (1.0 - p) / 2.0
-    cx = (cx_0 - delta_x - step) / p
-    cy = (cy_0 - delta_y - step) / p
+    cx = (cx_0 - delta_y - step) / p
+    cy = (cy_0 - delta_x - step) / p
     w = w_0 / p
     h = h_0 / p
 
