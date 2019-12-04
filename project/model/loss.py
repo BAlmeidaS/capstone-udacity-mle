@@ -5,16 +5,15 @@ import numpy as np
 from project.model.smooth_l1 import smooth_l1
 from project.utils import data
 
-STANDARD_BBOXES = np.expand_dims(
-    (data.StandardBoudingBoxes(feature_map_sizes=[38, 19, 10, 5, 3, 1],
-                               ratios_per_layer=[[1, 1/2, 2],
-                                                 [1, 1/2, 1/3, 2, 3],
-                                                 [1, 1/2, 1/3, 2, 3],
-                                                 [1, 1/2, 1/3, 2, 3],
-                                                 [1, 1/2, 2],
-                                                 [1, 1/2, 2]])
-         .references),
-    axis=0)
+BBOX_REF = data.StandardBoudingBoxes(feature_map_sizes=[38, 19, 10, 5, 3, 1],
+                                     ratios_per_layer=[[1, 1/2, 2],
+                                                       [1, 1/2, 1/3, 2, 3],
+                                                       [1, 1/2, 1/3, 2, 3],
+                                                       [1, 1/2, 1/3, 2, 3],
+                                                       [1, 1/2, 2],
+                                                       [1, 1/2, 2]])
+
+STANDARD_BBOXES = np.expand_dims(BBOX_REF.references, axis=0)
 
 MINCONST = 1e-15
 
@@ -37,28 +36,16 @@ class SSDloss():
 
         positives = tf.reduce_max(y_true[:, :, 1:-4], axis=-1)
 
-        # tf.print('loc_nan_count: ', tf.reduce_sum(tf.cast(tf.math.is_nan(loc), tf.int8)))
-        # tf.print('positives_count: ', N)
-
-        # for i in [6423, 8035, 8697, 8699, 8700, 8703, 8728, 8729, 8730, 8731]:
-        #     tf.print(f'  {i} pred: ', y_pred[0][i][-4:])
-        #     tf.print(f'  {i} loc: ', loc[0][i])
-        #     tf.print(f'  {i} positives: ', positives[0][i])
-        #     tf.print(f'  {i} mult: ', (loc * positives)[0][i])
-        #     tf.print()
-
         loc_loss = tf.reduce_sum(loc * positives)
 
         loss = (conf_loss_pos + conf_loss_neg + 1 * loc_loss) / N
-        # tf.print('loss: ', loss)
         if verbose:
             tf.print('pred: ', y_pred[:, :, -4:])
             tf.print('loc_loss: ', loc_loss)
             tf.print('conf_loss_pos: ', conf_loss_pos)
             tf.print('conf_loss_neg: ', conf_loss_neg)
+            tf.print('loss: ', loss)
             tf.print('\n\n')
-
-        # result = tf.cond(tf.equal(N, 0), lambda: 0.0, lambda: loss)
 
         return tf.convert_to_tensor(loss, dtype=tf.float32)
 
@@ -84,7 +71,7 @@ class SSDloss():
         return tf.stack([g_hat_cx, g_hat_cy, g_hat_w, g_hat_h], axis=-1)
 
     def loc_loss(self, y_true, y_pred):
-        z = y_pred[:, :, -4:] - self.g_hat(y_true[:, :, -4:])
+        z = self.g_hat(y_pred[:, :, -4:]) - self.g_hat(y_true[:, :, -4:])
         loc = tf.reduce_sum(smooth_l1(z), axis=-1)
         return tf.where(tf.math.is_nan(loc), tf.zeros_like(loc), loc)
 
