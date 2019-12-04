@@ -42,14 +42,19 @@ def load_model():
 
 
 def match_bbox(x, y):
+    bboxes_x = []
     for cx, cy, w, h, *labels in zip(x.cx, x.cy, x.w, x.h, *x[8:]):
-        bboxs = BBOX_REF.match(pd.DataFrame({'cx': [cx],
-                                             'cy': [cy],
-                                             'w': [w],
-                                             'h': [h]}).loc[0])
-        for i in bboxs:
+        bboxes = BBOX_REF.match(pd.DataFrame({'cx': [cx],
+                                              'cy': [cy],
+                                              'w': [w],
+                                              'h': [h]}).loc[0])
+        bboxes_x.append(bboxes)
+        for i in bboxes:
             y[i] = [0] + labels + [cx, cy, w, h]
 
+    if len(bboxes_x) == 0:
+        raise ValueError("There are no bounding boxes match")
+    x.bbox_ref = bboxes_x
     return y
 
 
@@ -105,7 +110,7 @@ def find_bbox(x, p=.7, delta_x=0.0, delta_y=0.0):
 
 
 def data_augmentation(ind, X, y):
-    x = X.iloc[ind]
+    x = X.iloc[ind].copy()
 
     img_path = x.Path
     img_b = image.load_img('project/' + img_path, target_size=(300, 300))
@@ -151,6 +156,8 @@ def data_augmentation(ind, X, y):
         x.cy = bboxes[:, 1]
         x.w = bboxes[:, 2]
         x.h = bboxes[:, 3]
+        for i, r in enumerate(bboxes[:, 4:].T):
+            x[8+i] = r
         y = match_bbox(x, y)
 
         yield img_z1, y
@@ -166,6 +173,8 @@ def data_augmentation(ind, X, y):
         x.cy = bboxes[:, 1]
         x.w = bboxes[:, 2]
         x.h = bboxes[:, 3]
+        for i, r in enumerate(bboxes[:, 4:].T):
+            x[8+i] = r
         y = match_bbox(x, y)
 
         yield img_z2, y
@@ -181,6 +190,8 @@ def data_augmentation(ind, X, y):
         x.cy = bboxes[:, 1]
         x.w = bboxes[:, 2]
         x.h = bboxes[:, 3]
+        for i, r in enumerate(bboxes[:, 4:].T):
+            x[8+i] = r
         y = match_bbox(x, y)
 
         yield img_z3, y
@@ -196,6 +207,8 @@ def data_augmentation(ind, X, y):
         x.cy = bboxes[:, 1]
         x.w = bboxes[:, 2]
         x.h = bboxes[:, 3]
+        for i, r in enumerate(bboxes[:, 4:].T):
+            x[8+i] = r
         y = match_bbox(x, y)
 
         yield img_z4, y
@@ -211,6 +224,8 @@ def data_augmentation(ind, X, y):
         x.cy = bboxes[:, 1]
         x.w = bboxes[:, 2]
         x.h = bboxes[:, 3]
+        for i, r in enumerate(bboxes[:, 4:].T):
+            x[8+i] = r
         y = match_bbox(x, y)
 
         yield img_z5, y
@@ -226,6 +241,8 @@ def data_augmentation(ind, X, y):
         x.cy = bboxes[:, 1]
         x.w = bboxes[:, 2]
         x.h = bboxes[:, 3]
+        for i, r in enumerate(bboxes[:, 4:].T):
+            x[8+i] = r
         y = match_bbox(x, y)
 
         yield img_z6, y
