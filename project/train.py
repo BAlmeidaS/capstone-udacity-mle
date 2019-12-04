@@ -52,10 +52,11 @@ def match_bbox(x, y):
         for i in bboxes:
             y[i] = [0] + labels + [cx, cy, w, h]
 
-    if len(bboxes_x) == 0:
-        raise ValueError("There are no bounding boxes match")
-    x.bbox_ref = bboxes_x
-    return y
+    for match_bboxes in bboxes_x:
+        if len(match_bboxes) > 0:
+            x.bbox_ref = bboxes_x
+            return y
+    raise ValueError("There are no bounding boxes match")
 
 
 def resize(img, x, p=.7, delta_x=0, delta_y=0):
@@ -104,9 +105,10 @@ def find_bbox(x, p=.7, delta_x=0.0, delta_y=0.0):
         n_cx, n_cy, n_w, n_h = resize_params([cx, cy, w, h], p, delta_x, delta_y)
         append_if_valid(bboxes, n_cx, n_cy, n_w, n_h, *classes)
 
-    if len(bboxes) == 0:
-        raise ValueError('No bounding boxes in new image')
-    return np.array(bboxes)
+    for ref_bboxes in bboxes:
+        if len(ref_bboxes) > 0:
+            return np.array(bboxes)
+    raise ValueError('No bounding boxes in new image')
 
 
 def data_augmentation(ind, X, y):
