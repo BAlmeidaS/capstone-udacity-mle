@@ -89,7 +89,6 @@ monotonic==1.5
 more-itertools==7.2.0
 msgpack==0.6.2
 mtcnn==0.1.0
-mujoco-py==2.0.2.8
 nbconvert==5.6.1
 nbformat==4.4.0
 networkx==2.4
