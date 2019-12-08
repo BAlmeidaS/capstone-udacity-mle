@@ -71,7 +71,7 @@ class SSDloss():
         return tf.stack([g_hat_cx, g_hat_cy, g_hat_w, g_hat_h], axis=-1)
 
     def loc_loss(self, y_true, y_pred):
-        z = self.g_hat(y_pred[:, :, -4:]) - self.g_hat(y_true[:, :, -4:])
+        z = y_pred[:, :, -4:] - self.g_hat(y_true[:, :, -4:])
         loc = tf.reduce_sum(smooth_l1(z), axis=-1)
         return tf.where(tf.math.is_nan(loc), tf.zeros_like(loc), loc)
 
