@@ -34,7 +34,7 @@ def load_model():
     model = ssd_model_300()
 
     # opt = Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999, amsgrad=False)
-    opt = SGD(learning_rate=1e-5, momentum=0.5, nesterov=False)
+    opt = SGD(learning_rate=1e-3, momentum=0.9, nesterov=False)
     ssd_loss = SSDloss()
     model.compile(optimizer=opt, loss=ssd_loss.loss)
 
@@ -337,34 +337,34 @@ def data_augmentation(ind, X, y):
         pass
 
 
-def main():
+def main(batch_size=16, steps_per_epoch=128):
     X, target = load_data()
 
     model = load_model()
     model.summary()
 
     def gen_data():
-        while True:
-            for ind, y in enumerate(target):
-                data_generator = data_augmentation(ind, X, y)
+        for ind, y in enumerate(target):
+            data_generator = data_augmentation(ind, X, y)
 
-                while True:
-                    try:
-                        img, y = next(data_generator)
+            while True:
+                try:
+                    img, y = next(data_generator)
 
-                        img = np.expand_dims(img, axis=0)
-                        y = np.expand_dims(y, axis=0)
+                    img = np.expand_dims(img, axis=0)
+                    y = np.expand_dims(y, axis=0)
 
-                        yield ((img - np.mean(img)) / (np.std(img) + 1e-15)), y
-                    except StopIteration:
-                        break
+                    yield ((img - np.mean(img)) / (np.std(img) + 1e-15)), y
+                except StopIteration:
+                    break
 
     def batch_gen_data():
-        while True:
-            batch_x, batch_y = None, None
-            batch_size = 16
+        batch_x, batch_y = None, None
 
-            for i, (x, y) in enumerate(gen_data()):
+        while True:
+            g = gen_data()
+
+            for i, (x, y) in enumerate(g):
                 if i % batch_size == 0:
                     if batch_x is not None and batch_y is not None:
                         yield batch_x, batch_y
@@ -376,13 +376,17 @@ def main():
                 batch_x = np.concatenate([batch_x, x], axis=0)
                 batch_y = np.concatenate([batch_y, y], axis=0)
 
+    data_aug_empirical = 15 - 2
+    # epochs = (num_images * data aug)/(steps_per_epoch * batch_size)
     model.fit_generator(batch_gen_data(),
-                        steps_per_epoch=128,
-                        epochs=240,
+                        steps_per_epoch=steps_per_epoch,
+                        epochs=int((target.shape[0] * data_aug_empirical)
+                                   / (steps_per_epoch * batch_size) + 1),
                         workers=0)
 
     model.save_weights(content.DATAPATH + '/weights300vgg16.h5')
 
 
 if __name__ == '__main__':
+    # main(batch_size=1, steps_per_epoch=50)
     main()
