@@ -61,32 +61,37 @@ def main():
                                           columns=[c[3:] for c in ohc.get_feature_names()]))
 
     # isolate useful columns
-    cols = ['boat', 'land_vehicle', 'skyscraper']
-    part_data = (all_data.query(f"LabelSemantic in {cols}")[
-        ['ImageID',
-         'LabelName',
-         'IsOccluded',
-         'IsTruncated',
-         'IsGroupOf',
-         'IsDepiction',
-         'IsInside',
-         'Path',
-         'LabelSemantic',
-         'cx',
-         'cy',
-         'w',
-         'h',
-         'boat',
-         'land_vehicle',
-         'skyscraper']
-    ])
+    # cols = ['boat', 'land_vehicle', 'skyscraper']
+    # part_data = (all_data.query(f"LabelSemantic in {cols}")[
+    #     ['ImageID',
+    #      'LabelName',
+    #      'IsOccluded',
+    #      'IsTruncated',
+    #      'IsGroupOf',
+    #      'IsDepiction',
+    #      'IsInside',
+    #      'Path',
+    #      'LabelSemantic',
+    #      'cx',
+    #      'cy',
+    #      'w',
+    #      'h',
+    #      'boat',
+    #      'land_vehicle',
+    #      'skyscraper']
+    # ])
+    all_cols = ['ImageID', 'LabelName', 'IsOccluded', 'IsTruncated', 'IsGroupOf',
+                'IsDepiction', 'IsInside', 'Path', 'LabelSemantic', 'cx', 'cy',
+                'w', 'h'] + all_data.columns[19:].tolist()
+    part_data = all_data[all_cols]
 
+    parallel = multiprocessing.cpu_count() - 2
 
-    step = int(part_data.shape[0] / multiprocessing.cpu_count()) + 1
+    step = int(part_data.shape[0] / parallel) + 1
 
     ray.init()
     try:
-        futures = [part_process.remote(part_data[i*step:(1+i)*step], i) for i in range(multiprocessing.cpu_count())]
+        futures = [part_process.remote(part_data[i*step:(1+i)*step], i) for i in range(parallel)]
         ray.get(futures)
     finally:
         ray.shutdown()
