@@ -33,6 +33,13 @@ def train_and_save_model(df):
     return ohc
 
 
+def load_model():
+    with open(os.path.join(modelpath, 'ohc.pkl'), 'rb') as f:
+        ohc = pickle.load(f)
+
+    return ohc
+
+
 @ray.remote
 def part_process(df, part):
     # define standard boxes (based on ssd architecture)
@@ -47,16 +54,18 @@ def part_process(df, part):
     # setting bbox ref which match with standard bboxes designed
     df['bbox_ref'] = df.apply(standard_bboxes.match, axis=1)
 
-    df.to_csv(modelpath + f"/train_preprocessed_{part}.csv", index=False)
+    df.to_csv(modelpath + f"/train_preprocessed_{part}_4mto6m.csv", index=False)
 
 
 def main():
-    all_data = data.all_train()
+    all_data = data.all_train()[4000000:6000000]
 
-    ohc = train_and_save_model(all_data)
+    # ohc = train_and_save_model(all_data)
+    ohc = load_model()
 
     labels = ohc.transform(all_data[['LabelSemantic']])
 
+    # removing useless prefix
     all_data = all_data.join(pd.DataFrame(labels,
                                           columns=[c[3:] for c in ohc.get_feature_names()]))
 
@@ -85,7 +94,7 @@ def main():
                 'w', 'h'] + all_data.columns[19:].tolist()
     part_data = all_data[all_cols]
 
-    parallel = multiprocessing.cpu_count() - 2
+    parallel = multiprocessing.cpu_count() - 1
 
     step = int(part_data.shape[0] / parallel) + 1
 
