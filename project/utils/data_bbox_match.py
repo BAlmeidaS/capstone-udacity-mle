@@ -16,6 +16,7 @@ import ray
 from sklearn.preprocessing import OneHotEncoder
 import multiprocessing
 
+import time
 
 tqdm.pandas()
 modelpath = os.path.join(content.DATAPATH, "MODEL")
@@ -54,19 +55,17 @@ def part_process(df, part):
     # setting bbox ref which match with standard bboxes designed
     df['bbox_ref'] = df.apply(standard_bboxes.match, axis=1)
 
-    df.to_csv(modelpath + f"/train_preprocessed_{part}_4mto6m.csv", index=False)
+    df.to_csv(modelpath + f"/train_preprocessed_{part}_14mtofinal.csv", index=False)
 
 
 def main():
-    all_data = data.all_train()[4000000:6000000]
+    all_data = data.all_train().iloc[:1000000, :]
 
     # ohc = train_and_save_model(all_data)
     ohc = load_model()
 
-    labels = ohc.transform(all_data[['LabelSemantic']])
-
     # removing useless prefix
-    all_data = all_data.join(pd.DataFrame(labels,
+    all_data = all_data.join(pd.DataFrame(ohc.transform(all_data[['LabelSemantic']]),
                                           columns=[c[3:] for c in ohc.get_feature_names()]))
 
     # isolate useful columns
@@ -92,15 +91,17 @@ def main():
     all_cols = ['ImageID', 'LabelName', 'IsOccluded', 'IsTruncated', 'IsGroupOf',
                 'IsDepiction', 'IsInside', 'Path', 'LabelSemantic', 'cx', 'cy',
                 'w', 'h'] + all_data.columns[19:].tolist()
-    part_data = all_data[all_cols]
+    all_data = all_data[all_cols]
 
-    parallel = multiprocessing.cpu_count() - 1
+    parallel = multiprocessing.cpu_count() - 2
 
-    step = int(part_data.shape[0] / parallel) + 1
+    step = int((all_data.shape[0] / parallel) + 1)
+
+    time.sleep(20)
 
     ray.init()
     try:
-        futures = [part_process.remote(part_data[i*step:(1+i)*step], i) for i in range(parallel)]
+        futures = [part_process.remote(all_data[i*step:(1+i)*step], i) for i in range(parallel)]
         ray.get(futures)
     finally:
         ray.shutdown()
