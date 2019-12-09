@@ -2,7 +2,7 @@
 import os
 
 import numpy as np
-import modin.pandas as pd
+import pandas as pd
 
 import project.download_content as content
 
