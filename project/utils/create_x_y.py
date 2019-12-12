@@ -40,27 +40,27 @@ def main():
 
     imgs.reset_index(inplace=True)
 
-    standard_bboxes = data.StandardBoudingBoxes(feature_map_sizes=[38, 19, 10, 5, 3, 1],
-                                                ratios_per_layer=[[1, 1/2, 2],
-                                                                  [1, 1/2, 1/3, 2, 3],
-                                                                  [1, 1/2, 1/3, 2, 3],
-                                                                  [1, 1/2, 1/3, 2, 3],
-                                                                  [1, 1/2, 2],
-                                                                  [1, 1/2, 2]])
+    # standard_bboxes = data.StandardBoudingBoxes(feature_map_sizes=[38, 19, 10, 5, 3, 1],
+    #                                             ratios_per_layer=[[1, 1/2, 2],
+    #                                                               [1, 1/2, 1/3, 2, 3],
+    #                                                               [1, 1/2, 1/3, 2, 3],
+    #                                                               [1, 1/2, 1/3, 2, 3],
+    #                                                               [1, 1/2, 2],
+    #                                                               [1, 1/2, 2]])
 
     print('creating target dataset...')
 
-    target = np.zeros((imgs.shape[0],
-                      standard_bboxes.references.shape[0],
-                      (1 + len(dummy_classes) + 4)),
-                      dtype=np.float32)
+    # target = np.zeros((imgs.shape[0],
+    #                   standard_bboxes.references.shape[0],
+    #                   (1 + len(dummy_classes) + 4)),
+    #                   dtype=np.float32)
 
-    target[:][:] = [1] + [0] * len(dummy_classes) + [0, 0, 0, 0]
+    # target[:][:] = [1] + [0] * len(dummy_classes) + [0, 0, 0, 0]
 
-    for i, row in imgs.iterrows():
-        for cx, cy, w, h, refs, *labels in zip(row.cx, row.cy, row.w, row.h, row.bbox_ref, *row[8:]):
-            for id_ref in refs:
-                target[i][int(id_ref)] = [0] + labels + [cx, cy, w, h]
+    # for i, row in imgs.iterrows():
+    #     for cx, cy, w, h, refs, *labels in zip(row.cx, row.cy, row.w, row.h, row.bbox_ref, *row[8:]):
+    #         for id_ref in refs:
+    #             target[i][int(id_ref)] = [0] + labels + [cx, cy, w, h]
 
     print('saving files...')
 
@@ -68,8 +68,8 @@ def main():
 
     imgs.to_hdf(filepath, key='X', mode='w')
 
-    with h5py.File(filepath, 'a') as f:
-        f.create_dataset('y', data=target, dtype=np.float16)
+    # with h5py.File(filepath, 'a') as f:
+    #     f.create_dataset('y', data=target, dtype=np.float16)
 
 
 if __name__ == "__main__":
