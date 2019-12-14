@@ -21,6 +21,9 @@ def main():
     # adding a column with amount of bbox matched
     all_train['bbox_count'] = all_train.bbox_ref.apply(lambda x: len(x))
 
+    # using only bboxes that have a match with some default bbox
+    all_train = all_train[all_train.bbox_count > 0]
+
     datapath = os.path.join(modelpath, "data_300_vgg.h5")
 
     # getting all image names
