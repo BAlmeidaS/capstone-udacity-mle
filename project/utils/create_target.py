@@ -24,14 +24,14 @@ def main():
     # using only bboxes that have a match with some default bbox
     all_train = all_train[all_train.bbox_count > 0]
 
-    print(f"There are {len(all_train)} bounding boxes matched..."
+    print(f"There are {len(all_train)} bounding boxes matched...")
 
     datapath = os.path.join(modelpath, "data_300_vgg.h5")
 
     # getting all image names
     imgs = all_train['ImageID'].unique()
 
-    print(f"There are {len(imgs)} images..."
+    print(f"There are {len(imgs)} images...")
     # encoding each one with ascii
     ascii_imgs = [n.encode("ascii", "ignore") for n in imgs]
 
