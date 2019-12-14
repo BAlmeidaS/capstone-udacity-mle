@@ -1,6 +1,5 @@
 # imports
 import os
-os.sys.path.append(os.path.abspath(".."))
 
 import numpy as np
 import pandas as pd
@@ -8,7 +7,7 @@ import pandas as pd
 import h5py
 
 import project.download_content as content
-from project.utils import data
+from project.utils.data_bbox_match_hdf5 import standard_bboxes
 
 from tqdm import tqdm
 
@@ -18,59 +17,70 @@ modelpath = os.path.join(content.DATAPATH, "MODEL")
 def main():
     filepath = os.path.join(modelpath, "data_preprocessed.h5")
     all_train = pd.read_hdf(filepath, 'X', mode='r')
-    all_train['bbox_count'] = all_train.bbox_ref.apply(lambda x: len(x))
-    all_train = (pd.concat([all_train.query("bbox_count > 0")])
-                   .sample(frac=1, random_state=17))
 
-    imgs = all_train[['ImageID', 'Path']].drop_duplicates()
-    # getting the one hot encodes columns
+    # adding a column with amount of bbox matched
+    all_train['bbox_count'] = all_train.bbox_ref.apply(lambda x: len(x))
+
+    datapath = os.path.join(modelpath, "data_300_vgg.h5")
+
+    # getting all image names
+    imgs = all_train['ImageID'].unique()
+    # encoding each one with ascii
+    ascii_imgs = [n.encode("ascii", "ignore") for n in imgs]
+
+    # saving in dataset called 'images'
+    with h5py.File(datapath, 'w') as f:
+        f.create_dataset('images', (len(ascii_imgs),),
+                         f'S{len(ascii_imgs[0])}', ascii_imgs)
+
+    # getting all columns class
     dummy_classes = list(all_train.columns[13:-2])
 
-    imgs.set_index('ImageID', inplace=True)
+    # sorting all train df
+    all_train = all_train.sort_values('ImageID')
 
-    print('creating list of each feature grouped by imageID...')
+    f = h5py.File(datapath, 'a')
 
-    for c in tqdm(['cx', 'cy', 'w', 'h', 'bbox_ref', 'LabelSemantic'] + dummy_classes):
-        keys, values = all_train[['ImageID', c]].sort_values('ImageID').values.T
-        ukeys, index = np.unique(keys, True)
-        arrays = np.split(values, index[1:])
-        imgs = imgs.join(pd.DataFrame({'ImageID': ukeys,
-                                       c: [list(a) for a in arrays]})
-                           .set_index('ImageID'))
+    dtype = np.float16
 
-    imgs.reset_index(inplace=True)
+    try:
+        img_name = all_train.iloc[0].ImageID
 
-    # standard_bboxes = data.StandardBoudingBoxes(feature_map_sizes=[38, 19, 10, 5, 3, 1],
-    #                                             ratios_per_layer=[[1, 1/2, 2],
-    #                                                               [1, 1/2, 1/3, 2, 3],
-    #                                                               [1, 1/2, 1/3, 2, 3],
-    #                                                               [1, 1/2, 1/3, 2, 3],
-    #                                                               [1, 1/2, 2],
-    #                                                               [1, 1/2, 2]])
+        target = np.zeros((standard_bboxes.references.shape[0],
+                           (1 + len(dummy_classes) + 4)),
+                          dtype=dtype)
+        # set all bboxes default with 1 in no_class
+        target[:][:] = [1] + [0] * len(dummy_classes) + [0, 0, 0, 0]
 
-    print('creating target dataset...')
+        for img in tqdm(all_train.iloc[:10000, :].itertuples()):
+            if img_name != img[1]:
+                f.create_dataset(f"{img_name}-y",
+                                 shape=(standard_bboxes.references.shape[0],
+                                        (1 + len(dummy_classes) + 4)),
+                                 compression='gzip', compression_opts=5,
+                                 data=target,
+                                 dtype=dtype)
 
-    # target = np.zeros((imgs.shape[0],
-    #                   standard_bboxes.references.shape[0],
-    #                   (1 + len(dummy_classes) + 4)),
-    #                   dtype=np.float32)
+                target = np.zeros((standard_bboxes.references.shape[0],
+                                   (1 + len(dummy_classes) + 4)),
+                                  dtype=dtype)
 
-    # target[:][:] = [1] + [0] * len(dummy_classes) + [0, 0, 0, 0]
+                # set all bboxes default with 1 in no_class
+                target[:][:] = [1] + [0] * len(dummy_classes) + [0, 0, 0, 0]
 
-    # for i, row in imgs.iterrows():
-    #     for cx, cy, w, h, refs, *labels in zip(row.cx, row.cy, row.w, row.h, row.bbox_ref, *row[8:]):
-    #         for id_ref in refs:
-    #             target[i][int(id_ref)] = [0] + labels + [cx, cy, w, h]
+                img_name = img[1]
 
-    print('saving files...')
+            # iterate over each bbox ref
+            for bbox_id in img[-2]:
+                # fill the target with the following logic:
+                # no_class + one_hot_enc_of_each_class + cx + cy + w + h
+                target[bbox_id] = np.array([0,
+                                            *img[14:-2],
+                                            *img[10:14]])
 
-    filepath = os.path.join(content.DATAPATH, "MODEL", "all_data_300_vgg.h5")
-
-    imgs.to_hdf(filepath, key='X', mode='w')
-
-    # with h5py.File(filepath, 'a') as f:
-    #     f.create_dataset('y', data=target, dtype=np.float16)
+    finally:
+        f.close()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
