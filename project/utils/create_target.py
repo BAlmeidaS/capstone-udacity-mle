@@ -61,7 +61,7 @@ def main():
 
         for img in tqdm(all_train.iloc[:, :].itertuples()):
             if img_name != img[1]:
-                f.create_dataset(f"{img_name}-y",
+                f.create_dataset(img_name,
                                  shape=(standard_bboxes.references.shape[0],
                                         (1 + len(dummy_classes) + 4)),
                                  compression='gzip', compression_opts=5,
