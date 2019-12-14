@@ -64,7 +64,7 @@ def main():
                 f.create_dataset(img_name,
                                  shape=(standard_bboxes.references.shape[0],
                                         (1 + len(dummy_classes) + 4)),
-                                 compression='gzip', compression_opts=5,
+                                 compression='gzip', compression_opts=1,
                                  data=target,
                                  dtype=dtype)
 
