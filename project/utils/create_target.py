@@ -52,7 +52,7 @@ def main():
         # set all bboxes default with 1 in no_class
         target[:][:] = [1] + [0] * len(dummy_classes) + [0, 0, 0, 0]
 
-        for img in tqdm(all_train.iloc[:10000, :].itertuples()):
+        for img in tqdm(all_train.iloc[:, :].itertuples()):
             if img_name != img[1]:
                 f.create_dataset(f"{img_name}-y",
                                  shape=(standard_bboxes.references.shape[0],
