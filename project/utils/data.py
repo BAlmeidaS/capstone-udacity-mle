@@ -43,10 +43,17 @@ class StandardBoudingBoxes:
 
         self.references = pd.DataFrame(arr, columns=['cx', 'cy', 'w', 'h'])
 
-    def match(self, bbox: pd.Series, iou_threshold: float = 0.5) -> np.array:
-        """return all bbox default that matches with some bbox passed"""
-        bbox = bbox[['cx', 'cy', 'w', 'h']]
-        ious = iou(bbox.values, self.references.values)
+    def match(self, bbox: np.array, iou_threshold: float = 0.5) -> np.array:
+        """return all bbox default that matches with some bbox passed
+
+        Args:
+            bbox (np.array): ['cx', 'cy', 'w', 'h']
+            iou_threshold (float): iou threshold
+
+        Returns:
+            np.array
+        """
+        ious = iou(bbox, self.references.values)
         ious[ious < iou_threshold] = 0
 
         bboxs = np.where(ious > 0)[0]
