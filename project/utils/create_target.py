@@ -28,17 +28,11 @@ def main():
     # setting path to data
     datapath = os.path.join(modelpath, "data_300_vgg.h5")
 
-    # getting all image names
-    imgs = all_train[['ImageID', 'Path']].drop_duplicates().values
-
     # sorting all train df
     all_train = all_train.sort_values('ImageID')
 
     # open file and maintain it opened
     f = h5py.File(datapath, 'w')
-
-    # setting dtype variable to be used in anchors
-    dt = h5py.vlen_dtype(np.dtype('int16'))
 
     # size of the hfd5 group
     group_size = 500000
@@ -52,7 +46,7 @@ def main():
         img_path = img[7]
         images = []
         target = [[img[13:-2].tolist() + img[9:13].tolist()],
-                [list(img[-2])]]
+                  [list(img[-2])]]
 
         # iterate over all data set
         for i, img in tqdm(enumerate(all_train.iloc[:, :].itertuples())):
@@ -64,7 +58,7 @@ def main():
             # save last image when the new one is new
             if img_name != img[1]:
                 images.append([img_name.encode("ascii", "ignore"),
-                            img_path.encode("ascii", "ignore")])
+                              img_path.encode("ascii", "ignore")])
 
                 # create a dataset with the position and classification
                 f[group].create_dataset(name=img_name,
@@ -82,7 +76,7 @@ def main():
                                         shape=(len(images), 2),
                                         data=images,
                                         dtype=h5py.special_dtype(vlen=str))
-                images=[]
+                images = []
 
             target[0].append(list(img[14:-2] + img[10:14]))
             target[1].append(list(img[-2]))
@@ -96,9 +90,9 @@ def main():
                                 data=images,
                                 dtype=h5py.special_dtype(vlen=str))
 
-
     finally:
         f.close()
+
 
 if __name__ == '__main__':
     main()
