@@ -89,5 +89,33 @@ def main():
         f.close()
 
 
+def adding_path_in_image():
+    filepath = os.path.join(modelpath, "data_preprocessed.h5")
+    all_train = pd.read_hdf(filepath, 'X', mode='r')
+
+    datapath = os.path.join(modelpath, "data_300_vgg.h5")
+
+    # reading old dataset
+    with h5py.File(datapath, 'r') as f:
+        images = [i.decode() for i in f['images'][:]]
+
+    # create a DF pandas with image path
+    img_names = pd.DataFrame(images, columns=['ImageID'])
+    new_refs = img_names.merge(all_train[['ImageID', 'Path']].drop_duplicates(),
+                               on='ImageID', how='inner').values
+
+    # encode ascii each string
+    ascii_imgs = np.array([[j.encode("ascii", "ignore") for j in i] for i in new_refs])
+
+    # reopen file
+    with h5py.File(datapath, 'r+') as f:
+        # delete the original file
+        del f['images']
+        # recreate with new dataset contain ID and Path
+        f.create_dataset('images', ascii_imgs.shape,
+                         data=ascii_imgs,
+                         dtype=h5py.special_dtype(vlen=str))
+
+
 if __name__ == '__main__':
     main()
