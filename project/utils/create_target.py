@@ -7,7 +7,6 @@ import pandas as pd
 import h5py
 
 import project.download_content as content
-from project.utils.data_bbox_match_hdf5 import standard_bboxes
 
 from tqdm import tqdm
 
@@ -26,95 +25,91 @@ def main():
 
     print(f"There are {len(all_train)} bounding boxes matched...")
 
+    # setting path to data
     datapath = os.path.join(modelpath, "data_300_vgg.h5")
 
     # getting all image names
-    imgs = all_train['ImageID'].unique()
+    imgs = all_train[['ImageID', 'Path']].drop_duplicates().values
 
-    print(f"There are {len(imgs)} images...")
     # encoding each one with ascii
-    ascii_imgs = [n.encode("ascii", "ignore") for n in imgs]
+    ascii_imgs = np.array([[j.encode("ascii", "ignore") for j in i] for i in imgs])
 
     # saving in dataset called 'images'
     with h5py.File(datapath, 'w') as f:
-        f.create_dataset('images', (len(ascii_imgs),),
-                         f'S{len(ascii_imgs[0])}', ascii_imgs)
-
-    # getting all columns class
-    dummy_classes = list(all_train.columns[13:-2])
+        f.create_dataset('images', ascii_imgs.shape,
+                         data=ascii_imgs,
+                         dtype=h5py.special_dtype(vlen=str))
 
     # sorting all train df
     all_train = all_train.sort_values('ImageID')
 
+    # open file and maintain it opened
     f = h5py.File(datapath, 'a')
 
-    dtype = np.float16
+    # setting dtype variable to be used in anchors
+    dt = h5py.vlen_dtype(np.dtype('int16'))
+
+    # size of the hfd5 group
+    group_size = 500000
 
     try:
-        img_name = all_train.iloc[0].ImageID
+        # get the first image
+        img = all_train.iloc[0]
 
-        target = np.zeros((standard_bboxes.references.shape[0],
-                           (1 + len(dummy_classes) + 4)),
-                          dtype=dtype)
-        # set all bboxes default with 1 in no_class
-        target[:][:] = [1] + [0] * len(dummy_classes) + [0, 0, 0, 0]
+        # setting initial states ti iterate over all dataframe
+        img_name = img[0]
+        img_path = img[7]
+        images = []
+        target = [[img[13:-2].tolist() + img[9:13].tolist()],
+                  [list(img[-2])]]
 
-        for img in tqdm(all_train.iloc[:, :].itertuples()):
+        # iterate over all data set
+        for i, img in tqdm(enumerate(all_train.iloc[:, :].itertuples())):
+            # in first iteration of each batch size create the group
+            if i % group_size == 0:
+                group = str(int(i/group_size))
+                f.create_group(group)
+
+            # save last image when the new one is new
             if img_name != img[1]:
-                f.create_dataset(img_name,
-                                 shape=(standard_bboxes.references.shape[0],
-                                        (1 + len(dummy_classes) + 4)),
-                                 compression='gzip', compression_opts=1,
-                                 data=target,
-                                 dtype=dtype)
+                images.append([img_name.encode("ascii", "ignore"),
+                               img_path.encode("ascii", "ignore")])
 
-                target = np.zeros((standard_bboxes.references.shape[0],
-                                   (1 + len(dummy_classes) + 4)),
-                                  dtype=dtype)
+                # create a dataset with the position and classification
+                f[group].create_dataset(name=img_name,
+                                        data=target[0],
+                                        dtype=np.float32,
+                                        compression='gzip',
+                                        compression_opts=9)
 
-                # set all bboxes default with 1 in no_class
-                target[:][:] = [1] + [0] * len(dummy_classes) + [0, 0, 0, 0]
+                # create a dataset with the anchors
+                dset = f[group].create_dataset(name=f"{img_name}-anchors",
+                                               shape=(len(target[1]),),
+                                               dtype=dt,
+                                               compression='gzip',
+                                               compression_opts=9)
 
+                for j, row in enumerate(target[1]):
+                    dset[j] = row
+
+                # clean all states
+                target = [[], []]
                 img_name = img[1]
+                img_path = img[8]
 
-            # iterate over each bbox ref
-            for bbox_id in img[-2]:
-                # fill the target with the following logic:
-                # no_class + one_hot_enc_of_each_class + cx + cy + w + h
-                target[bbox_id] = np.array([0,
-                                            *img[14:-2],
-                                            *img[10:14]])
+            # save the images dataset in last iteration of each batch
+            if (i+1) % group_size == 0:
+                f[group].create_dataset(name='images',
+                                        shape=(len(images), 2),
+                                        data=images,
+                                        dtype=h5py.special_dtype(vlen=str))
+                images = []
+
+            target[0].append(list(img[14:-2] + img[10:14]))
+            target[1].append(list(img[-2]))
 
     finally:
         f.close()
-
-
-def adding_path_in_image():
-    filepath = os.path.join(modelpath, "data_preprocessed.h5")
-    all_train = pd.read_hdf(filepath, 'X', mode='r')
-
-    datapath = os.path.join(modelpath, "data_300_vgg.h5")
-
-    # reading old dataset
-    with h5py.File(datapath, 'r') as f:
-        images = [i.decode() for i in f['images'][:]]
-
-    # create a DF pandas with image path
-    img_names = pd.DataFrame(images, columns=['ImageID'])
-    new_refs = img_names.merge(all_train[['ImageID', 'Path']].drop_duplicates(),
-                               on='ImageID', how='inner').values
-
-    # encode ascii each string
-    ascii_imgs = np.array([[j.encode("ascii", "ignore") for j in i] for i in new_refs])
-
-    # reopen file
-    with h5py.File(datapath, 'r+') as f:
-        # delete the original file
-        del f['images']
-        # recreate with new dataset contain ID and Path
-        f.create_dataset('images', ascii_imgs.shape,
-                         data=ascii_imgs,
-                         dtype=h5py.special_dtype(vlen=str))
 
 
 if __name__ == '__main__':
