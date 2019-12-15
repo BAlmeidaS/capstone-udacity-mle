@@ -8,7 +8,6 @@ import os
 
 from keras.preprocessing import image
 from keras.optimizers import SGD
-from keras.optimizers import Adam
 
 import project.download_content as content
 from project.model.ssd_model_300 import ssd_model_300
@@ -18,16 +17,33 @@ from project.model.loss import SSDloss, BBOX_REF
 import logging
 logging.getLogger().setLevel(logging.INFO)
 
+DATAPATH = os.path.join(content.DATAPATH, "MODEL", "part_data_300_vgg.h5")
 
-def load_data():
-    filepath = os.path.join(content.DATAPATH, "MODEL", "part_data_300_vgg.h5")
+ALL_ANCHORS = BBOX_REF.references.values
 
-    X = pd.read_hdf(filepath, 'X', mode='r')
 
-    with h5py.File(filepath, 'r') as f:
-        target = f['y'][:]
+def get_group_imgs():
+    with h5py.File(DATAPATH, 'r') as f:
+        groups = list(f.keys())
+    return groups[:-1]
 
-    return X, target
+
+def load_image_infos(group):
+    """return an array with images infos"""
+    with h5py.File(DATAPATH, 'r') as f:
+        images = f[group]['images'][:]
+
+    return images
+
+
+def load_data(image_info):
+    """ Load data, returning X and y for each id image """
+    with h5py.File(DATAPATH, 'r') as f:
+        y = f[image_info[0]][:]
+
+    x = image.load_img(image_info[1])
+
+    return x, y
 
 
 def load_model():
@@ -41,20 +57,22 @@ def load_model():
     return model
 
 
-def match_bbox(x, y):
-    bboxes_x = []
-    for cx, cy, w, h, *labels in zip(x.cx, x.cy, x.w, x.h, *x[8:]):
-        bboxes = BBOX_REF.match(pd.DataFrame({'cx': [cx],
-                                              'cy': [cy],
-                                              'w': [w],
-                                              'h': [h]}).loc[0])
-        bboxes_x.append(bboxes)
-        for i in bboxes:
-            y[i] = [0] + labels + [cx, cy, w, h]
+def match_bbox(bboxes):
+    y = np.zeros((ALL_ANCHORS.shape[0], bboxes.shape[1] + 1))
+    y[:, 0] = 1
 
-    for match_bboxes in bboxes_x:
-        if len(match_bboxes) > 0:
-            x.bbox_ref = bboxes_x
+    find_anchors = []
+    for *classes, cx, cy, w, h in bboxes:
+        ground_truth = np.array([cx, cy, w, h])
+        anchors = BBOX_REF.match(ground_truth)
+
+        find_anchors.append(anchors)
+
+        for i in anchors:
+            y[i] = [0] + classes + [cx, cy, w, h]
+
+    for anchors in find_anchors:
+        if len(anchors) > 0:
             return y
     raise ValueError("There are no bounding boxes match")
 
@@ -111,249 +129,253 @@ def find_bbox(x, p=.7, delta_x=0.0, delta_y=0.0):
     raise ValueError('No bounding boxes in new image')
 
 
-def data_augmentation(ind, X, y):
-    x = X.iloc[ind].copy()
+def data_augmentation(image_info, bboxes_raw):
+    bboxes = bboxes_raw.copy()
 
-    img_path = x.Path
-    img_b = image.load_img('project/' + img_path, target_size=(300, 300))
+    img_bin = image.load_img('project/' + image_info[1], target_size=(300, 300))
+    img = image.img_to_array(img_bin)
 
-    img = image.img_to_array(img_b)
-
+    y = match_bbox(bboxes)
     yield img, y
 
-    # flip horizontaly
-    y[:] = [1] + [0] * (y.shape[1] - 1)
-
-    img_flip_h = np.flip(img, 1)
-    x.cx = np.subtract(1, x.cx)
-    y = match_bbox(x, y)
-
-    yield img_flip_h, y
-
-    # flip verticaly
-    y[:] = [1] + [0] * (y.shape[1] - 1)
-
-    img_flip_v = np.flip(img, 0)
-    x.cy = np.subtract(1, x.cy)
-    y = match_bbox(x, y)
-
-    yield img_flip_v, y
-
-    # flip vertically and horizontaly
-    y[:] = [1] + [0] * (y.shape[1] - 1)
-
-    img_flip_h_v = np.flip(img, [0, 1])
-    x.cx = np.subtract(1, x.cx)
-    x.cy = np.subtract(1, x.cy)
-    y = match_bbox(x, y)
-
-    yield img_flip_h_v, y
-
-    # zoom in center
-    try:
-        y[:] = [1] + [0] * (y.shape[1] - 1)
-
-        img_z, bboxes = resize(img, x, .84, .079, .079)
-        x.cx = bboxes[:, 0]
-        x.cy = bboxes[:, 1]
-        x.w = bboxes[:, 2]
-        x.h = bboxes[:, 3]
-        for i, r in enumerate(bboxes[:, 4:].T):
-            x[8+i] = r
-        y = match_bbox(x, y)
-
-        yield img_z, y
-    except ValueError:
-        pass
-
-    # zoom in center 2
-    try:
-        y[:] = [1] + [0] * (y.shape[1] - 1)
-
-        img_z, bboxes = resize(img, x, .7, .149, .149)
-        x.cx = bboxes[:, 0]
-        x.cy = bboxes[:, 1]
-        x.w = bboxes[:, 2]
-        x.h = bboxes[:, 3]
-        for i, r in enumerate(bboxes[:, 4:].T):
-            x[8+i] = r
-        y = match_bbox(x, y)
-
-        yield img_z, y
-    except ValueError:
-        pass
-
-    # zoom in center 3
-    try:
-        y[:] = [1] + [0] * (y.shape[1] - 1)
-
-        img_z, bboxes = resize(img, x, .6, 0, 0)
-        x.cx = bboxes[:, 0]
-        x.cy = bboxes[:, 1]
-        x.w = bboxes[:, 2]
-        x.h = bboxes[:, 3]
-        for i, r in enumerate(bboxes[:, 4:].T):
-            x[8+i] = r
-        y = match_bbox(x, y)
-
-        yield img_z, y
-    except ValueError:
-        pass
-
-    # zoom in top left
-    try:
-        y[:] = [1] + [0] * (y.shape[1] - 1)
-
-        img_z, bboxes = resize(img, x, .8, -0.09, -.099)
-        x.cx = bboxes[:, 0]
-        x.cy = bboxes[:, 1]
-        x.w = bboxes[:, 2]
-        x.h = bboxes[:, 3]
-        for i, r in enumerate(bboxes[:, 4:].T):
-            x[8+i] = r
-        y = match_bbox(x, y)
-
-        yield img_z, y
-    except ValueError:
-        pass
-
-    # zoom in top right
-    try:
-        y[:] = [1] + [0] * (y.shape[1] - 1)
-
-        img_z, bboxes = resize(img, x, .8, .099, -.099)
-        x.cx = bboxes[:, 0]
-        x.cy = bboxes[:, 1]
-        x.w = bboxes[:, 2]
-        x.h = bboxes[:, 3]
-        for i, r in enumerate(bboxes[:, 4:].T):
-            x[8+i] = r
-        y = match_bbox(x, y)
-
-        yield img_z, y
-    except ValueError:
-        pass
-
-    # zoom in bottom left
-    try:
-        y[:] = [1] + [0] * (y.shape[1] - 1)
-
-        img_z, bboxes = resize(img, x, .8, -.099, .099)
-        x.cx = bboxes[:, 0]
-        x.cy = bboxes[:, 1]
-        x.w = bboxes[:, 2]
-        x.h = bboxes[:, 3]
-        for i, r in enumerate(bboxes[:, 4:].T):
-            x[8+i] = r
-        y = match_bbox(x, y)
-
-        yield img_z, y
-    except ValueError:
-        pass
-
-    # zoom in bottom right
-    try:
-        y[:] = [1] + [0] * (y.shape[1] - 1)
-
-        img_z, bboxes = resize(img, x, .8, .099, .099)
-        x.cx = bboxes[:, 0]
-        x.cy = bboxes[:, 1]
-        x.w = bboxes[:, 2]
-        x.h = bboxes[:, 3]
-        for i, r in enumerate(bboxes[:, 4:].T):
-            x[8+i] = r
-        y = match_bbox(x, y)
-
-        yield img_z, y
-    except ValueError:
-        pass
-
-    # zoom in top left 2
-    try:
-        y[:] = [1] + [0] * (y.shape[1] - 1)
-
-        img_z, bboxes = resize(img, x, .6, -.2, -.2)
-        x.cx = bboxes[:, 0]
-        x.cy = bboxes[:, 1]
-        x.w = bboxes[:, 2]
-        x.h = bboxes[:, 3]
-        for i, r in enumerate(bboxes[:, 4:].T):
-            x[8+i] = r
-        y = match_bbox(x, y)
-
-        yield img_z, y
-    except ValueError:
-        pass
-
-    # zoom in top right 2
-    try:
-        y[:] = [1] + [0] * (y.shape[1] - 1)
-
-        img_z, bboxes = resize(img, x, .6, .2, -.2)
-        x.cx = bboxes[:, 0]
-        x.cy = bboxes[:, 1]
-        x.w = bboxes[:, 2]
-        x.h = bboxes[:, 3]
-        for i, r in enumerate(bboxes[:, 4:].T):
-            x[8+i] = r
-        y = match_bbox(x, y)
-
-        yield img_z, y
-    except ValueError:
-        pass
-
-    # zoom in bottom left 2
-    try:
-        y[:] = [1] + [0] * (y.shape[1] - 1)
-
-        img_z, bboxes = resize(img, x, .6, -.2, .2)
-        x.cx = bboxes[:, 0]
-        x.cy = bboxes[:, 1]
-        x.w = bboxes[:, 2]
-        x.h = bboxes[:, 3]
-        for i, r in enumerate(bboxes[:, 4:].T):
-            x[8+i] = r
-        y = match_bbox(x, y)
-
-        yield img_z, y
-    except ValueError:
-        pass
-
-    # zoom in bottom right 2
-    try:
-        y[:] = [1] + [0] * (y.shape[1] - 1)
-
-        img_z, bboxes = resize(img, x, .6, .2, .2)
-        x.cx = bboxes[:, 0]
-        x.cy = bboxes[:, 1]
-        x.w = bboxes[:, 2]
-        x.h = bboxes[:, 3]
-        for i, r in enumerate(bboxes[:, 4:].T):
-            x[8+i] = r
-        y = match_bbox(x, y)
-
-        yield img_z, y
-    except ValueError:
-        pass
+#    # flip horizontaly
+#    y[:] = [1] + [0] * (y.shape[1] - 1)
+#
+#    img_flip_h = np.flip(img, 1)
+#    x.cx = np.subtract(1, x.cx)
+#    y = match_bbox(x, y)
+#
+#    yield img_flip_h, y
+#
+#    # flip verticaly
+#    y[:] = [1] + [0] * (y.shape[1] - 1)
+#
+#    img_flip_v = np.flip(img, 0)
+#    x.cy = np.subtract(1, x.cy)
+#    y = match_bbox(x, y)
+#
+#    yield img_flip_v, y
+#
+#    # flip vertically and horizontaly
+#    y[:] = [1] + [0] * (y.shape[1] - 1)
+#
+#    img_flip_h_v = np.flip(img, [0, 1])
+#    x.cx = np.subtract(1, x.cx)
+#    x.cy = np.subtract(1, x.cy)
+#    y = match_bbox(x, y)
+#
+#    yield img_flip_h_v, y
+#
+#    # zoom in center
+#    try:
+#        y[:] = [1] + [0] * (y.shape[1] - 1)
+#
+#        img_z, bboxes = resize(img, x, .84, .079, .079)
+#        x.cx = bboxes[:, 0]
+#        x.cy = bboxes[:, 1]
+#        x.w = bboxes[:, 2]
+#        x.h = bboxes[:, 3]
+#        for i, r in enumerate(bboxes[:, 4:].T):
+#            x[8+i] = r
+#        y = match_bbox(x, y)
+#
+#        yield img_z, y
+#    except ValueError:
+#        pass
+#
+#    # zoom in center 2
+#    try:
+#        y[:] = [1] + [0] * (y.shape[1] - 1)
+#
+#        img_z, bboxes = resize(img, x, .7, .149, .149)
+#        x.cx = bboxes[:, 0]
+#        x.cy = bboxes[:, 1]
+#        x.w = bboxes[:, 2]
+#        x.h = bboxes[:, 3]
+#        for i, r in enumerate(bboxes[:, 4:].T):
+#            x[8+i] = r
+#        y = match_bbox(x, y)
+#
+#        yield img_z, y
+#    except ValueError:
+#        pass
+#
+#    # zoom in center 3
+#    try:
+#        y[:] = [1] + [0] * (y.shape[1] - 1)
+#
+#        img_z, bboxes = resize(img, x, .6, 0, 0)
+#        x.cx = bboxes[:, 0]
+#        x.cy = bboxes[:, 1]
+#        x.w = bboxes[:, 2]
+#        x.h = bboxes[:, 3]
+#        for i, r in enumerate(bboxes[:, 4:].T):
+#            x[8+i] = r
+#        y = match_bbox(x, y)
+#
+#        yield img_z, y
+#    except ValueError:
+#        pass
+#
+#    # zoom in top left
+#    try:
+#        y[:] = [1] + [0] * (y.shape[1] - 1)
+#
+#        img_z, bboxes = resize(img, x, .8, -0.09, -.099)
+#        x.cx = bboxes[:, 0]
+#        x.cy = bboxes[:, 1]
+#        x.w = bboxes[:, 2]
+#        x.h = bboxes[:, 3]
+#        for i, r in enumerate(bboxes[:, 4:].T):
+#            x[8+i] = r
+#        y = match_bbox(x, y)
+#
+#        yield img_z, y
+#    except ValueError:
+#        pass
+#
+#    # zoom in top right
+#    try:
+#        y[:] = [1] + [0] * (y.shape[1] - 1)
+#
+#        img_z, bboxes = resize(img, x, .8, .099, -.099)
+#        x.cx = bboxes[:, 0]
+#        x.cy = bboxes[:, 1]
+#        x.w = bboxes[:, 2]
+#        x.h = bboxes[:, 3]
+#        for i, r in enumerate(bboxes[:, 4:].T):
+#            x[8+i] = r
+#        y = match_bbox(x, y)
+#
+#        yield img_z, y
+#    except ValueError:
+#        pass
+#
+#    # zoom in bottom left
+#    try:
+#        y[:] = [1] + [0] * (y.shape[1] - 1)
+#
+#        img_z, bboxes = resize(img, x, .8, -.099, .099)
+#        x.cx = bboxes[:, 0]
+#        x.cy = bboxes[:, 1]
+#        x.w = bboxes[:, 2]
+#        x.h = bboxes[:, 3]
+#        for i, r in enumerate(bboxes[:, 4:].T):
+#            x[8+i] = r
+#        y = match_bbox(x, y)
+#
+#        yield img_z, y
+#    except ValueError:
+#        pass
+#
+#    # zoom in bottom right
+#    try:
+#        y[:] = [1] + [0] * (y.shape[1] - 1)
+#
+#        img_z, bboxes = resize(img, x, .8, .099, .099)
+#        x.cx = bboxes[:, 0]
+#        x.cy = bboxes[:, 1]
+#        x.w = bboxes[:, 2]
+#        x.h = bboxes[:, 3]
+#        for i, r in enumerate(bboxes[:, 4:].T):
+#            x[8+i] = r
+#        y = match_bbox(x, y)
+#
+#        yield img_z, y
+#    except ValueError:
+#        pass
+#
+#    # zoom in top left 2
+#    try:
+#        y[:] = [1] + [0] * (y.shape[1] - 1)
+#
+#        img_z, bboxes = resize(img, x, .6, -.2, -.2)
+#        x.cx = bboxes[:, 0]
+#        x.cy = bboxes[:, 1]
+#        x.w = bboxes[:, 2]
+#        x.h = bboxes[:, 3]
+#        for i, r in enumerate(bboxes[:, 4:].T):
+#            x[8+i] = r
+#        y = match_bbox(x, y)
+#
+#        yield img_z, y
+#    except ValueError:
+#        pass
+#
+#    # zoom in top right 2
+#    try:
+#        y[:] = [1] + [0] * (y.shape[1] - 1)
+#
+#        img_z, bboxes = resize(img, x, .6, .2, -.2)
+#        x.cx = bboxes[:, 0]
+#        x.cy = bboxes[:, 1]
+#        x.w = bboxes[:, 2]
+#        x.h = bboxes[:, 3]
+#        for i, r in enumerate(bboxes[:, 4:].T):
+#            x[8+i] = r
+#        y = match_bbox(x, y)
+#
+#        yield img_z, y
+#    except ValueError:
+#        pass
+#
+#    # zoom in bottom left 2
+#    try:
+#        y[:] = [1] + [0] * (y.shape[1] - 1)
+#
+#        img_z, bboxes = resize(img, x, .6, -.2, .2)
+#        x.cx = bboxes[:, 0]
+#        x.cy = bboxes[:, 1]
+#        x.w = bboxes[:, 2]
+#        x.h = bboxes[:, 3]
+#        for i, r in enumerate(bboxes[:, 4:].T):
+#            x[8+i] = r
+#        y = match_bbox(x, y)
+#
+#        yield img_z, y
+#    except ValueError:
+#        pass
+#
+#    # zoom in bottom right 2
+#    try:
+#        y[:] = [1] + [0] * (y.shape[1] - 1)
+#
+#        img_z, bboxes = resize(img, x, .6, .2, .2)
+#        x.cx = bboxes[:, 0]
+#        x.cy = bboxes[:, 1]
+#        x.w = bboxes[:, 2]
+#        x.h = bboxes[:, 3]
+#        for i, r in enumerate(bboxes[:, 4:].T):
+#            x[8+i] = r
+#        y = match_bbox(x, y)
+#
+#        yield img_z, y
+#    except ValueError:
+#        pass
 
 
 def main(batch_size=16, steps_per_epoch=128):
-    X, target = load_data()
-
     model = load_model()
     model.summary()
 
     def gen_data():
-        for ind, y in enumerate(target):
-            data_generator = data_augmentation(ind, X, y)
+        for group in get_group_imgs():
+            for image_info in load_image_infos(group):
+                with h5py.File(DATAPATH, 'r') as f:
+                    bboxes = f[group][image_info[0]][:]
+
+            data_generator = data_augmentation(image_info, bboxes)
 
             while True:
                 try:
                     img, y = next(data_generator)
 
+                    print(img.shape)
+                    print(y.shape)
                     img = np.expand_dims(img, axis=0)
                     y = np.expand_dims(y, axis=0)
 
+                    # normalize pixels
                     yield ((img - np.mean(img)) / (np.std(img) + 1e-15)), y
                 except StopIteration:
                     break
@@ -376,11 +398,12 @@ def main(batch_size=16, steps_per_epoch=128):
                 batch_x = np.concatenate([batch_x, x], axis=0)
                 batch_y = np.concatenate([batch_y, y], axis=0)
 
-    data_aug_empirical = 15 - 2
+    # value of how many data augs are made over each image
+    data_aug_empirical = 15
     # epochs = (num_images * data aug)/(steps_per_epoch * batch_size)
-    model.fit_generator(batch_gen_data(),
+    model.fit_generator(gen_data(),
                         steps_per_epoch=steps_per_epoch,
-                        epochs=int((target.shape[0] * data_aug_empirical)
+                        epochs=int((32000 * data_aug_empirical)
                                    / (steps_per_epoch * batch_size) + 1),
                         workers=0)
 
