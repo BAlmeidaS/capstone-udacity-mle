@@ -53,6 +53,15 @@ class StandardBoudingBoxes:
         Returns:
             np.array
         """
+        if len(bbox.shape) > 0 and bbox.shape[-1] != 4:
+            raise ValueError('WRONG BBOX SHAPE')
+
+        if len(bbox.shape) > 1:
+            append = []
+            for b in bbox:
+                append = append + list(self.match(b, iou_threshold))
+            return np.array(append)
+
         ious = iou(bbox, self.references.values)
         ious[ious < iou_threshold] = 0
 
