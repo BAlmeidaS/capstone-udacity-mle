@@ -77,12 +77,12 @@ def ssd_model_300(reg=0.00003):
     # loc_8 = layers.Conv2D(5 * 4, (3, 3), padding='same', name='8th_bbs')(conv13_2)
 
     # defining confidences
-    conf_1 = layers.Conv2D(4 * 4, (3, 3), padding='same', name='1st_conf')(conv4_3)
-    conf_2 = layers.Conv2D(6 * 4, (3, 3), padding='same', name='2nd_conf')(fc7)
-    conf_3 = layers.Conv2D(6 * 4, (3, 3), padding='same', name='3rd_conf')(conv8_2)
-    conf_4 = layers.Conv2D(6 * 4, (3, 3), padding='same', name='4th_conf')(conv9_2)
-    conf_5 = layers.Conv2D(4 * 4, (3, 3), padding='same', name='5th_conf')(conv10_2)
-    conf_6 = layers.Conv2D(4 * 4, (3, 3), padding='same', name='6th_conf')(conv11_2)
+    conf_1 = layers.Conv2D(4 * 600, (3, 3), padding='same', name='1st_conf')(conv4_3)
+    conf_2 = layers.Conv2D(6 * 600, (3, 3), padding='same', name='2nd_conf')(fc7)
+    conf_3 = layers.Conv2D(6 * 600, (3, 3), padding='same', name='3rd_conf')(conv8_2)
+    conf_4 = layers.Conv2D(6 * 600, (3, 3), padding='same', name='4th_conf')(conv9_2)
+    conf_5 = layers.Conv2D(4 * 600, (3, 3), padding='same', name='5th_conf')(conv10_2)
+    conf_6 = layers.Conv2D(4 * 600, (3, 3), padding='same', name='6th_conf')(conv11_2)
     # conf_7 = layers.Conv2D(5 * 2, (3, 3), padding='same', name='7th_conf')(conv12_2)
     # conf_8 = layers.Conv2D(5 * 2, (3, 3), padding='same', name='8th_conf')(conv13_2)
 
@@ -96,12 +96,12 @@ def ssd_model_300(reg=0.00003):
     # rloc_7 = layers.Reshape((-1, 4), name='rloc7')(loc_7)
     # rloc_8 = layers.Reshape((-1, 4), name='rloc8')(loc_8)
 
-    rconf_1 = layers.Reshape((-1, 4), name='rconf1')(conf_1)
-    rconf_2 = layers.Reshape((-1, 4), name='rconf2')(conf_2)
-    rconf_3 = layers.Reshape((-1, 4), name='rconf3')(conf_3)
-    rconf_4 = layers.Reshape((-1, 4), name='rconf4')(conf_4)
-    rconf_5 = layers.Reshape((-1, 4), name='rconf5')(conf_5)
-    rconf_6 = layers.Reshape((-1, 4), name='rconf6')(conf_6)
+    rconf_1 = layers.Reshape((-1, 600), name='rconf1')(conf_1)
+    rconf_2 = layers.Reshape((-1, 600), name='rconf2')(conf_2)
+    rconf_3 = layers.Reshape((-1, 600), name='rconf3')(conf_3)
+    rconf_4 = layers.Reshape((-1, 600), name='rconf4')(conf_4)
+    rconf_5 = layers.Reshape((-1, 600), name='rconf5')(conf_5)
+    rconf_6 = layers.Reshape((-1, 600), name='rconf6')(conf_6)
     # rconf_7 = layers.Reshape((-1, 2), name='rconf7')(conf_7)
     # rconf_8 = layers.Reshape((-1, 2), name='rconf8')(conf_8)
 
