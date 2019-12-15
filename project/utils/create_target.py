@@ -31,20 +31,11 @@ def main():
     # getting all image names
     imgs = all_train[['ImageID', 'Path']].drop_duplicates().values
 
-    # encoding each one with ascii
-    ascii_imgs = np.array([[j.encode("ascii", "ignore") for j in i] for i in imgs])
-
-    # saving in dataset called 'images'
-    with h5py.File(datapath, 'w') as f:
-        f.create_dataset('images', ascii_imgs.shape,
-                         data=ascii_imgs,
-                         dtype=h5py.special_dtype(vlen=str))
-
     # sorting all train df
     all_train = all_train.sort_values('ImageID')
 
     # open file and maintain it opened
-    f = h5py.File(datapath, 'a')
+    f = h5py.File(datapath, 'w')
 
     # setting dtype variable to be used in anchors
     dt = h5py.vlen_dtype(np.dtype('int16'))
@@ -61,7 +52,7 @@ def main():
         img_path = img[7]
         images = []
         target = [[img[13:-2].tolist() + img[9:13].tolist()],
-                  [list(img[-2])]]
+                [list(img[-2])]]
 
         # iterate over all data set
         for i, img in tqdm(enumerate(all_train.iloc[:, :].itertuples())):
@@ -73,24 +64,12 @@ def main():
             # save last image when the new one is new
             if img_name != img[1]:
                 images.append([img_name.encode("ascii", "ignore"),
-                               img_path.encode("ascii", "ignore")])
+                            img_path.encode("ascii", "ignore")])
 
                 # create a dataset with the position and classification
                 f[group].create_dataset(name=img_name,
                                         data=target[0],
-                                        dtype=np.float32,
-                                        compression='gzip',
-                                        compression_opts=9)
-
-                # create a dataset with the anchors
-                dset = f[group].create_dataset(name=f"{img_name}-anchors",
-                                               shape=(len(target[1]),),
-                                               dtype=dt,
-                                               compression='gzip',
-                                               compression_opts=9)
-
-                for j, row in enumerate(target[1]):
-                    dset[j] = row
+                                        dtype=np.float32)
 
                 # clean all states
                 target = [[], []]
@@ -103,14 +82,23 @@ def main():
                                         shape=(len(images), 2),
                                         data=images,
                                         dtype=h5py.special_dtype(vlen=str))
-                images = []
+                images=[]
 
             target[0].append(list(img[14:-2] + img[10:14]))
             target[1].append(list(img[-2]))
 
+        f[group].create_dataset(name=img_name,
+                                data=target[0],
+                                dtype=np.float32)
+
+        f[group].create_dataset(name='images',
+                                shape=(len(images), 2),
+                                data=images,
+                                dtype=h5py.special_dtype(vlen=str))
+
+
     finally:
         f.close()
-
 
 if __name__ == '__main__':
     main()
