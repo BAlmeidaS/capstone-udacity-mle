@@ -12,17 +12,21 @@ import project.download_content as content
 
 from project.model.loss import BBOX_REF
 
+import ray
+
 import logging
 
-from scipy import sparse
+from operator import is_not
+from functools import partial
+
 logging.getLogger().setLevel(logging.INFO)
 
-DATAPATH = os.path.join(content.DATAPATH, "MODEL", "data_300_vgg.h5")
+DATAPATH = os.path.join(content.DATAPATH, "MODEL",
+                        os.getenv('DATA'))
 
 modelpath = os.path.join(content.DATAPATH, "MODEL")
 
 ALL_ANCHORS = BBOX_REF.references.values
-
 
 def get_group_imgs():
     with h5py.File(DATAPATH, 'r') as f:
@@ -111,11 +115,28 @@ def find_bbox(bboxes, proportion=.7, delta_x=0.0, delta_y=0.0):
     raise ValueError('No bounding boxes in new image')
 
 
+def normalize(img):
+    return (img - np.mean(img)) / (np.std(img) + 1e-15)
+
+
+def pre_process(img, y):
+    img = np.expand_dims(img, axis=0)
+    y = np.expand_dims(y, axis=0)
+
+    return normalize(img), y[:, :, [0, 53, 301, 465, -4, -3, -2, -1]]
+
+
 def original_image(img, bboxes_raw):
     bboxes = deepcopy(bboxes_raw)
     y = match_bbox(bboxes)
-    # return img, y[:, [0, 53, 301, 465, -4, -3, -2, -1]]
-    return img, y
+    return pre_process(img, y)
+
+
+@ray.remote
+def async_original_image(*args):
+    if args is None:
+        return None
+    return original_image(*args)
 
 
 def flip_horiz(img, bboxes_raw):
@@ -125,8 +146,12 @@ def flip_horiz(img, bboxes_raw):
     bboxes[:, -4] = 1 - bboxes[:, -4]
     y = match_bbox(bboxes)
 
-    # return img_flip_h, y[:, [0, 53, 301, 465, -4, -3, -2, -1]]
-    return img_flip_h, y
+    return pre_process(img_flip_h, y)
+
+
+@ray.remote
+def async_flip_horiz(img, bboxes):
+    return flip_horiz(img, bboxes)
 
 
 def flip_vert(img, bboxes_raw):
@@ -136,8 +161,13 @@ def flip_vert(img, bboxes_raw):
     bboxes[:, -3] = 1 - bboxes[:, -3]
     y = match_bbox(bboxes)
 
-    # return img_flip_v, y[:, [0, 53, 301, 465, -4, -3, -2, -1]]
-    return img_flip_v, y
+    return pre_process(img_flip_v, y)
+
+
+@ray.remote
+def async_flip_vert(img, bboxes):
+    return flip_vert(img, bboxes)
+
 
 def flip_both(img, bboxes_raw):
     img_flip_h_v = np.flip(img, [0, 1])
@@ -146,8 +176,13 @@ def flip_both(img, bboxes_raw):
     bboxes[:, -4:-2] = 1 - bboxes[:, -4:-2]
     y = match_bbox(bboxes)
 
-    # return img_flip_h_v, y[:, [0, 53, 301, 465, -4, -3, -2, -1]]
-    return img_flip_h_v, y
+    return pre_process(img_flip_h_v, y)
+
+
+@ray.remote
+def async_flip_both(img, bboxes):
+    return flip_both(img, bboxes)
+
 
 def zoom(img, bboxes_raw, proportion=.7, delta_x=0, delta_y=0):
     bboxes = deepcopy(bboxes_raw)
@@ -155,8 +190,41 @@ def zoom(img, bboxes_raw, proportion=.7, delta_x=0, delta_y=0):
 
     y = match_bbox(bboxes)
 
-    # return img_z, y[:, [0, 53, 301, 465, -4, -3, -2, -1]]
-    return img_z, y
+    return pre_process(img_z, y)
+
+@ray.remote
+def async_zoom(img, bboxes, proportion, delta_x, delta_y):
+    try:
+        return zoom(img, bboxes, proportion, delta_x, delta_y)
+    except ValueError:
+        return None
+
+
+@ray.remote
+def async_data_augmentation(image_info, bboxes):
+    img_bin = image.load_img('project/' + image_info[1], target_size=(300, 300))
+    img = image.img_to_array(img_bin)
+
+    futures = [async_original_image.remote(img, bboxes),
+               async_flip_horiz.remote(img, bboxes),
+               async_flip_vert.remote(img, bboxes),
+               async_flip_both.remote(img, bboxes),
+               async_zoom.remote(img, bboxes, .84, 0, 0),
+               async_zoom.remote(img, bboxes, .7, 0, 0),
+               async_zoom.remote(img, bboxes, .6, 0, 0),
+               async_zoom.remote(img, bboxes, .8, -.099, -.099),
+               async_zoom.remote(img, bboxes, .8, .099, -.099),
+               async_zoom.remote(img, bboxes, .8, -.099, .099),
+               async_zoom.remote(img, bboxes, .8, .099, .099),
+               async_zoom.remote(img, bboxes, .6, -.2, -.2),
+               async_zoom.remote(img, bboxes, .6, .2, -.2),
+               async_zoom.remote(img, bboxes, .6, -.2, .2),
+               async_zoom.remote(img, bboxes, .6, .2, .2)]
+
+    results = ray.get(futures)
+
+    return list(filter(partial(is_not, None), results))
+
 
 def gen_data_augmentation(image_info, bboxes):
     img_bin = image.load_img('project/' + image_info[1], target_size=(300, 300))
