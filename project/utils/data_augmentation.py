@@ -111,174 +111,128 @@ def find_bbox(bboxes, proportion=.7, delta_x=0.0, delta_y=0.0):
     raise ValueError('No bounding boxes in new image')
 
 
-def data_augmentation(image_info, bboxes_raw):
-    img_bin = image.load_img('project/' + image_info[1], target_size=(300, 300))
-    img = image.img_to_array(img_bin)
-
+def original_image(img, bboxes_raw):
     bboxes = deepcopy(bboxes_raw)
     y = match_bbox(bboxes)
-    # yield img, y[:, [0, 53, 301, 465, -4, -3, -2, -1]]
-    yield img, y
+    # return img, y[:, [0, 53, 301, 465, -4, -3, -2, -1]]
+    return img, y
 
-    # flip horizontaly
+
+def flip_horiz(img, bboxes_raw):
     img_flip_h = np.flip(img, 1)
 
     bboxes = deepcopy(bboxes_raw)
     bboxes[:, -4] = 1 - bboxes[:, -4]
     y = match_bbox(bboxes)
 
-    # yield img_flip_h, y[:, [0, 53, 301, 465, -4, -3, -2, -1]]
-    yield img_flip_h, y
+    # return img_flip_h, y[:, [0, 53, 301, 465, -4, -3, -2, -1]]
+    return img_flip_h, y
 
-    # flip verticaly
+
+def flip_vert(img, bboxes_raw):
     img_flip_v = np.flip(img, 0)
 
     bboxes = deepcopy(bboxes_raw)
     bboxes[:, -3] = 1 - bboxes[:, -3]
     y = match_bbox(bboxes)
 
-    # yield img_flip_v, y[:, [0, 53, 301, 465, -4, -3, -2, -1]]
-    yield img_flip_v, y
+    # return img_flip_v, y[:, [0, 53, 301, 465, -4, -3, -2, -1]]
+    return img_flip_v, y
 
-    # flip vertically and horizontaly
+def flip_both(img, bboxes_raw):
     img_flip_h_v = np.flip(img, [0, 1])
 
     bboxes = deepcopy(bboxes_raw)
     bboxes[:, -4:-2] = 1 - bboxes[:, -4:-2]
     y = match_bbox(bboxes)
 
-    # yield img_flip_h_v, y[:, [0, 53, 301, 465, -4, -3, -2, -1]]
-    yield img_flip_h_v, y
+    # return img_flip_h_v, y[:, [0, 53, 301, 465, -4, -3, -2, -1]]
+    return img_flip_h_v, y
+
+def zoom(img, bboxes_raw, proportion=.7, delta_x=0, delta_y=0):
+    bboxes = deepcopy(bboxes_raw)
+    img_z, bboxes = resize(img, bboxes, proportion, delta_x, delta_y)
+
+    y = match_bbox(bboxes)
+
+    # return img_z, y[:, [0, 53, 301, 465, -4, -3, -2, -1]]
+    return img_z, y
+
+def data_augmentation(image_info, bboxes):
+    img_bin = image.load_img('project/' + image_info[1], target_size=(300, 300))
+    img = image.img_to_array(img_bin)
+
+    yield original_image(img, bboxes)
+
+    yield flip_horiz(img, bboxes)
+
+    yield flip_vert(img, bboxes)
+
+    yield flip_both(img, bboxes)
 
     # zoom in center
     try:
-        bboxes = deepcopy(bboxes_raw)
-        img_z, bboxes = resize(img, bboxes, .84, .079, .079)
-
-        y = match_bbox(bboxes)
-
-        # yield img_z, y[:, [0, 53, 301, 465, -4, -3, -2, -1]]
-        yield img_z, y
+        yield zoom(img, bboxes, .84, 0, 0)
     except ValueError:
         pass
 
     # zoom in center 2
     try:
-        bboxes = deepcopy(bboxes_raw)
-        img_z, bboxes = resize(img, bboxes, .7, .149, .149)
-
-        y = match_bbox(bboxes)
-
-        # yield img_z, y[:, [0, 53, 301, 465, -4, -3, -2, -1]]
-        yield img_z, y
+        yield zoom(img, bboxes, .7, 0, 0)
     except ValueError:
         pass
 
     # zoom in center 3
     try:
-        bboxes = deepcopy(bboxes_raw)
-        img_z, bboxes = resize(img, bboxes, .6, 0, 0)
-
-        y = match_bbox(bboxes)
-
-        # yield img_z, y[:, [0, 53, 301, 465, -4, -3, -2, -1]]
-        yield img_z, y
+        yield zoom(img, bboxes, .6, 0, 0)
     except ValueError:
         pass
 
     # zoom in top left
     try:
-        bboxes = deepcopy(bboxes_raw)
-        img_z, bboxes = resize(img, bboxes, .8, -0.09, -.099)
-
-        y = match_bbox(bboxes)
-
-        # yield img_z, y[:, [0, 53, 301, 465, -4, -3, -2, -1]]
-        yield img_z, y
+        yield zoom(img, bboxes, .8, -.099, -.099)
     except ValueError:
         pass
 
     # zoom in top right
     try:
-        bboxes = deepcopy(bboxes_raw)
-        img_z, bboxes = resize(img, bboxes, .8, .099, -.099)
-
-        y = match_bbox(bboxes)
-
-        # yield img_z, y[:, [0, 53, 301, 465, -4, -3, -2, -1]]
-        yield img_z, y
+        yield zoom(img, bboxes, .8, .099, -.099)
     except ValueError:
         pass
 
     # zoom in bottom left
     try:
-        bboxes = deepcopy(bboxes_raw)
-        img_z, bboxes = resize(img, bboxes, .8, -.099, .099)
-
-        y = match_bbox(bboxes)
-
-        # yield img_z, y[:, [0, 53, 301, 465, -4, -3, -2, -1]]
-        yield img_z, y
+        yield zoom(img, bboxes, .8, -.099, .099)
     except ValueError:
         pass
 
     # zoom in bottom right
     try:
-        bboxes = deepcopy(bboxes_raw)
-        img_z, bboxes = resize(img, bboxes, .8, .099, .099)
-
-        y = match_bbox(bboxes)
-
-        # yield img_z, y[:, [0, 53, 301, 465, -4, -3, -2, -1]]
-        yield img_z, y
+        yield zoom(img, bboxes, .8, .099, .099)
     except ValueError:
         pass
 
     # zoom in top left 2
     try:
-        bboxes = deepcopy(bboxes_raw)
-        img_z, bboxes = resize(img, bboxes, .6, -.2, -.2)
-
-        y = match_bbox(bboxes)
-
-        # yield img_z, y[:, [0, 53, 301, 465, -4, -3, -2, -1]]
-        yield img_z, y
+        yield zoom(img, bboxes, .6, -.2, -.2)
     except ValueError:
         pass
 
     # zoom in top right 2
     try:
-        bboxes = deepcopy(bboxes_raw)
-        img_z, bboxes = resize(img, bboxes, .6, .2, -.2)
-
-        y = match_bbox(bboxes)
-
-        # yield img_z, y[:, [0, 53, 301, 465, -4, -3, -2, -1]]
-        yield img_z, y
+        yield zoom(img, bboxes, .6, .2, -.2)
     except ValueError:
         pass
 
     # zoom in bottom left 2
     try:
-        bboxes = deepcopy(bboxes_raw)
-        img_z, bboxes = resize(img, bboxes, .6, -.2, .2)
-
-        y = match_bbox(bboxes)
-
-        # yield img_z, y[:, [0, 53, 301, 465, -4, -3, -2, -1]]
-        yield img_z, y
+        yield zoom(img, bboxes, .6, -.2, .2)
     except ValueError:
         pass
 
     # zoom in bottom right 2
     try:
-        bboxes = deepcopy(bboxes_raw)
-        img_z, bboxes = resize(img, bboxes, .6, .2, .2)
-
-        y = match_bbox(bboxes)
-
-        # yield img_z, y[:, [0, 53, 301, 465, -4, -3, -2, -1]]
-        yield img_z, y
+        yield zoom(img, bboxes, .6, .2, .2)
     except ValueError:
         pass
 
