@@ -2,6 +2,7 @@ import h5py
 import numpy as np
 import ray
 from collections import deque
+from itertools import zip_longest
 
 from project.utils import data_augmentation as da
 
@@ -13,6 +14,8 @@ from project.model.loss import SSDloss
 
 import logging
 logging.getLogger().setLevel(logging.INFO)
+
+from multiprocessing import cpu_count
 
 
 def count_images():
@@ -37,8 +40,14 @@ def load_model():
     return model
 
 
-def main(batch_size=16, steps_per_epoch=128, batch_images=160):
-    ray.init(ignore_reinit_error=True)
+def grouper(iterable, n, fillvalue=None):
+    "https://docs.python.org/3/library/itertools.html#itertools-recipes"
+    args = [iter(iterable)] * n
+    return zip_longest(*args, fillvalue=fillvalue)
+
+
+def main(batch_size=20, steps_per_epoch=200, batch_images=150):
+    ray.init()
 
     try:
         model = load_model()
@@ -49,20 +58,20 @@ def main(batch_size=16, steps_per_epoch=128, batch_images=160):
                 images, X = da.load_data(group)
 
                 batch = []
-                deq = deque(maxlen=batch_images)
+                futures = []
 
                 while True:
-                    for i, (image_info, bboxes) in enumerate(zip(images, X), 1):
-                        deq.append((image_info, bboxes))
-                        if i % batch_images == 0:
-                            futures = [da.async_data_augmentation.remote(i, b)
-                                       for i, b in deq]
+                    for i, items in enumerate(
+                        grouper(zip(images, X), batch_images), 1
+                    ):
+                        futures += [da.batch_data_augmentation.remote(items)]
+                        if i % cpu_count() == 0:
 
                             while len(futures):
                                 done_id, futures = ray.wait(futures)
                                 results = ray.get(done_id[0])
 
-                                batch += results
+                                batch += [item for sublist in results for item in sublist]
 
                                 while len(batch) > batch_size:
                                     topk = batch[:batch_size]
@@ -76,7 +85,7 @@ def main(batch_size=16, steps_per_epoch=128, batch_images=160):
                                     yield batch_x, batch_y
 
         # value of how many data augs are made over each image
-        data_aug_empirical = 6
+        data_aug_empirical = 5
         # epochs = (num_images * data aug)/(steps_per_epoch * batch_size)
         model.fit_generator(gen_data(),
                             steps_per_epoch=steps_per_epoch,
