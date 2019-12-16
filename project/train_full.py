@@ -37,8 +37,8 @@ def load_model():
     return model
 
 
-def main(batch_size=24, steps_per_epoch=128, batch_images=30):
-    ray.init(ignore_reinit_error=True)
+def main(batch_size=20, steps_per_epoch=200, batch_images=20):
+    ray.init()
 
     try:
         model = load_model()
@@ -50,27 +50,30 @@ def main(batch_size=24, steps_per_epoch=128, batch_images=30):
 
                 batch = []
                 deq = deque(maxlen=batch_images)
+                futures = []
 
                 while True:
                     for i, (image_info, bboxes) in enumerate(zip(images, X), 1):
-                        deq.append((image_info, bboxes))
+                        futures += [da.async_data_augmentation.remote(image_info,
+                                                                      bboxes)]
                         if i % batch_images == 0:
-                            while len(batch) > batch_size:
-                                topk = batch[:batch_size]
-                                batch = batch[batch_size:]
 
-                                imgs = [k[0] for k in topk]
-                                ys = [k[1] for k in topk]
-                                batch_x = np.concatenate(imgs, axis=0)
-                                batch_y = np.concatenate(ys, axis=0)
+                            while len(futures):
+                                done_id, futures = ray.wait(futures)
+                                results = ray.get(done_id[0])
 
-                                yield batch_x, batch_y
+                                batch += results
 
-                            futures = [da.async_data_augmentation.remote(i, b)
-                                       for i, b in deq]
-                            results = ray.get(futures)
+                                while len(batch) > batch_size:
+                                    topk = batch[:batch_size]
+                                    batch = batch[batch_size:]
 
-                            batch += [item for sublist in results for item in sublist]
+                                    imgs = [k[0] for k in topk]
+                                    ys = [k[1] for k in topk]
+                                    batch_x = np.concatenate(imgs, axis=0)
+                                    batch_y = np.concatenate(ys, axis=0)
+
+                                    yield batch_x, batch_y
 
         # value of how many data augs are made over each image
         data_aug_empirical = 6
