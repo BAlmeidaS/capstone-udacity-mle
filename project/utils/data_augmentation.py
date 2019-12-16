@@ -17,7 +17,7 @@ import logging
 from scipy import sparse
 logging.getLogger().setLevel(logging.INFO)
 
-DATAPATH = os.path.join(content.DATAPATH, "MODEL", "part_data_300_vgg.h5")
+DATAPATH = os.path.join(content.DATAPATH, "MODEL", "data_300_vgg.h5")
 
 modelpath = os.path.join(content.DATAPATH, "MODEL")
 
