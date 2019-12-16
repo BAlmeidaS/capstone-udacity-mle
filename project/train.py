@@ -37,7 +37,7 @@ def load_model():
     return model
 
 
-def main(batch_size=16, steps_per_epoch=128, batch_images=3):
+def main(batch_size=16, steps_per_epoch=128, batch_images=160):
     ray.init(ignore_reinit_error=True)
 
     try:
@@ -57,20 +57,23 @@ def main(batch_size=16, steps_per_epoch=128, batch_images=3):
                         if i % batch_images == 0:
                             futures = [da.async_data_augmentation.remote(i, b)
                                        for i, b in deq]
-                            results = ray.get(futures)
 
-                            batch += [item for sublist in results for item in sublist]
+                            while len(futures):
+                                done_id, futures = ray.wait(futures)
+                                results = ray.get(done_id[0])
 
-                            if len(batch) > batch_size:
-                                topk = batch[:batch_size]
-                                batch = batch[batch_size:]
+                                batch += results
 
-                                imgs = [k[0] for k in topk]
-                                ys = [k[1] for k in topk]
-                                batch_x = np.concatenate(imgs, axis=0)
-                                batch_y = np.concatenate(ys, axis=0)
+                                while len(batch) > batch_size:
+                                    topk = batch[:batch_size]
+                                    batch = batch[batch_size:]
 
-                                yield batch_x, batch_y
+                                    imgs = [k[0] for k in topk]
+                                    ys = [k[1] for k in topk]
+                                    batch_x = np.concatenate(imgs, axis=0)
+                                    batch_y = np.concatenate(ys, axis=0)
+
+                                    yield batch_x, batch_y
 
         # value of how many data augs are made over each image
         data_aug_empirical = 6
