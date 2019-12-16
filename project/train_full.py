@@ -76,7 +76,7 @@ def main(batch_size=20, steps_per_epoch=200, batch_images=20):
                                     yield batch_x, batch_y
 
         # value of how many data augs are made over each image
-        data_aug_empirical = 6
+        data_aug_empirical = 5
         # epochs = (num_images * data aug)/(steps_per_epoch * batch_size)
         model.fit_generator(gen_data(),
                             steps_per_epoch=steps_per_epoch,
