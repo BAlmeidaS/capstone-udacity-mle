@@ -205,7 +205,10 @@ def async_zoom(img, bboxes, proportion, delta_x, delta_y):
 
 
 @ray.remote
-def async_data_augmentation(image_info, bboxes):
+def batch_data_augmentation(batch):
+    return [data_augmentation(*item) for item in batch]
+
+def data_augmentation(image_info, bboxes):
     img_bin = image.load_img('project/' + image_info[1], target_size=(300, 300))
     img = image.img_to_array(img_bin)
     # futures = [async_original_image.remote(img, bboxes),
