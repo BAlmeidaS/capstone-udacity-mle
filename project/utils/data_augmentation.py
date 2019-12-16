@@ -123,7 +123,8 @@ def pre_process(img, y):
     img = np.expand_dims(img, axis=0)
     y = np.expand_dims(y, axis=0)
 
-    return normalize(img), y[:, :, [0, 53, 301, 465, -4, -3, -2, -1]]
+    return normalize(img), y
+    # return normalize(img), y[:, :, [0, 53, 301, 465, -4, -3, -2, -1]]
 
 
 def original_image(img, bboxes_raw):
@@ -185,12 +186,15 @@ def async_flip_both(img, bboxes):
 
 
 def zoom(img, bboxes_raw, proportion=.7, delta_x=0, delta_y=0):
-    bboxes = deepcopy(bboxes_raw)
-    img_z, bboxes = resize(img, bboxes, proportion, delta_x, delta_y)
+    try:
+        bboxes = deepcopy(bboxes_raw)
+        img_z, bboxes = resize(img, bboxes, proportion, delta_x, delta_y)
 
-    y = match_bbox(bboxes)
+        y = match_bbox(bboxes)
 
-    return pre_process(img_z, y)
+        return pre_process(img_z, y)
+    except ValueError:
+        return None
 
 @ray.remote
 def async_zoom(img, bboxes, proportion, delta_x, delta_y):
@@ -204,24 +208,38 @@ def async_zoom(img, bboxes, proportion, delta_x, delta_y):
 def async_data_augmentation(image_info, bboxes):
     img_bin = image.load_img('project/' + image_info[1], target_size=(300, 300))
     img = image.img_to_array(img_bin)
+    # futures = [async_original_image.remote(img, bboxes),
+    #            async_flip_horiz.remote(img, bboxes),
+    #            async_flip_vert.remote(img, bboxes),
+    #            async_flip_both.remote(img, bboxes),
+    #            async_zoom.remote(img, bboxes, .84, 0, 0),
+    #            async_zoom.remote(img, bboxes, .7, 0, 0),
+    #            async_zoom.remote(img, bboxes, .6, 0, 0),
+    #            async_zoom.remote(img, bboxes, .8, -.099, -.099),
+    #            async_zoom.remote(img, bboxes, .8, .099, -.099),
+    #            async_zoom.remote(img, bboxes, .8, -.099, .099),
+    #            async_zoom.remote(img, bboxes, .8, .099, .099),
+    #            async_zoom.remote(img, bboxes, .6, -.2, -.2),
+    #            async_zoom.remote(img, bboxes, .6, .2, -.2),
+    #            async_zoom.remote(img, bboxes, .6, -.2, .2),
+    #            async_zoom.remote(img, bboxes, .6, .2, .2)]
 
-    futures = [async_original_image.remote(img, bboxes),
-               async_flip_horiz.remote(img, bboxes),
-               async_flip_vert.remote(img, bboxes),
-               async_flip_both.remote(img, bboxes),
-               async_zoom.remote(img, bboxes, .84, 0, 0),
-               async_zoom.remote(img, bboxes, .7, 0, 0),
-               async_zoom.remote(img, bboxes, .6, 0, 0),
-               async_zoom.remote(img, bboxes, .8, -.099, -.099),
-               async_zoom.remote(img, bboxes, .8, .099, -.099),
-               async_zoom.remote(img, bboxes, .8, -.099, .099),
-               async_zoom.remote(img, bboxes, .8, .099, .099),
-               async_zoom.remote(img, bboxes, .6, -.2, -.2),
-               async_zoom.remote(img, bboxes, .6, .2, -.2),
-               async_zoom.remote(img, bboxes, .6, -.2, .2),
-               async_zoom.remote(img, bboxes, .6, .2, .2)]
-
-    results = ray.get(futures)
+    # results = ray.get(futures)
+    results = [original_image(img, bboxes),
+               flip_horiz(img, bboxes),
+               flip_vert(img, bboxes),
+               flip_both(img, bboxes),
+               zoom(img, bboxes, .84, 0, 0),
+               zoom(img, bboxes, .7, 0, 0),
+               zoom(img, bboxes, .6, 0, 0),
+               zoom(img, bboxes, .8, -.099, -.099),
+               zoom(img, bboxes, .8, .099, -.099),
+               zoom(img, bboxes, .8, -.099, .099),
+               zoom(img, bboxes, .8, .099, .099),
+               zoom(img, bboxes, .6, -.2, -.2),
+               zoom(img, bboxes, .6, .2, -.2),
+               zoom(img, bboxes, .6, -.2, .2),
+               zoom(img, bboxes, .6, .2, .2)]
 
     return list(filter(partial(is_not, None), results))
 
