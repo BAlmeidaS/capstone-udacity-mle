@@ -158,7 +158,7 @@ def zoom(img, bboxes_raw, proportion=.7, delta_x=0, delta_y=0):
     # return img_z, y[:, [0, 53, 301, 465, -4, -3, -2, -1]]
     return img_z, y
 
-def data_augmentation(image_info, bboxes):
+def gen_data_augmentation(image_info, bboxes):
     img_bin = image.load_img('project/' + image_info[1], target_size=(300, 300))
     img = image.img_to_array(img_bin)
 
