@@ -5,10 +5,16 @@ import numpy as np
 from project.model.smooth_l1 import smooth_l1
 from project.utils import data
 
-BBOX_REF = data.StandardBoudingBoxes(feature_map_sizes=[38, 19, 10, 5, 3, 1],
-                                     ratios_per_layer=[[1, 1/2, 2],
-                                                       [1, 1/2, 1/3, 2, 3],
-                                                       [1, 1/2, 1/3, 2, 3],
+# BBOX_REF = data.StandardBoudingBoxes(feature_map_sizes=[38, 19, 10, 5, 3, 1],
+#                                      ratios_per_layer=[[1, 1/2, 2],
+#                                                        [1, 1/2, 1/3, 2, 3],
+#                                                        [1, 1/2, 1/3, 2, 3],
+#                                                        [1, 1/2, 1/3, 2, 3],
+#                                                        [1, 1/2, 2],
+#                                                        [1, 1/2, 2]])
+
+BBOX_REF = data.StandardBoudingBoxes(feature_map_sizes=[10, 5, 3, 1],
+                                     ratios_per_layer=[[1, 1/2, 1/3, 2, 3],
                                                        [1, 1/2, 1/3, 2, 3],
                                                        [1, 1/2, 2],
                                                        [1, 1/2, 2]])
