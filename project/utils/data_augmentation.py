@@ -128,9 +128,12 @@ def pre_process(img, y):
 
 
 def original_image(img, bboxes_raw):
-    bboxes = deepcopy(bboxes_raw)
-    y = match_bbox(bboxes)
-    return pre_process(img, y)
+    try:
+        bboxes = deepcopy(bboxes_raw)
+        y = match_bbox(bboxes)
+        return pre_process(img, y)
+    except ValueError:
+        return None
 
 
 @ray.remote
@@ -141,13 +144,16 @@ def async_original_image(*args):
 
 
 def flip_horiz(img, bboxes_raw):
-    img_flip_h = np.flip(img, 1)
+    try:
+        img_flip_h = np.flip(img, 1)
 
-    bboxes = deepcopy(bboxes_raw)
-    bboxes[:, -4] = 1 - bboxes[:, -4]
-    y = match_bbox(bboxes)
+        bboxes = deepcopy(bboxes_raw)
+        bboxes[:, -4] = 1 - bboxes[:, -4]
+        y = match_bbox(bboxes)
 
-    return pre_process(img_flip_h, y)
+        return pre_process(img_flip_h, y)
+    except ValueError:
+        return None
 
 
 @ray.remote
@@ -156,13 +162,16 @@ def async_flip_horiz(img, bboxes):
 
 
 def flip_vert(img, bboxes_raw):
-    img_flip_v = np.flip(img, 0)
+    try:
+        img_flip_v = np.flip(img, 0)
 
-    bboxes = deepcopy(bboxes_raw)
-    bboxes[:, -3] = 1 - bboxes[:, -3]
-    y = match_bbox(bboxes)
+        bboxes = deepcopy(bboxes_raw)
+        bboxes[:, -3] = 1 - bboxes[:, -3]
+        y = match_bbox(bboxes)
 
-    return pre_process(img_flip_v, y)
+        return pre_process(img_flip_v, y)
+    except ValueError:
+        return None
 
 
 @ray.remote
@@ -171,13 +180,16 @@ def async_flip_vert(img, bboxes):
 
 
 def flip_both(img, bboxes_raw):
-    img_flip_h_v = np.flip(img, [0, 1])
+    try:
+        img_flip_h_v = np.flip(img, [0, 1])
 
-    bboxes = deepcopy(bboxes_raw)
-    bboxes[:, -4:-2] = 1 - bboxes[:, -4:-2]
-    y = match_bbox(bboxes)
+        bboxes = deepcopy(bboxes_raw)
+        bboxes[:, -4:-2] = 1 - bboxes[:, -4:-2]
+        y = match_bbox(bboxes)
 
-    return pre_process(img_flip_h_v, y)
+        return pre_process(img_flip_h_v, y)
+    except ValueError:
+        return None
 
 
 @ray.remote
@@ -206,7 +218,10 @@ def async_zoom(img, bboxes, proportion, delta_x, delta_y):
 
 @ray.remote
 def batch_data_augmentation(batch):
-    return [data_augmentation(*item) for item in batch]
+    if batch:
+        return [data_augmentation(*item) for item in batch if item is not None]
+    return []
+
 
 def data_augmentation(image_info, bboxes):
     img_bin = image.load_img('project/' + image_info[1], target_size=(300, 300))

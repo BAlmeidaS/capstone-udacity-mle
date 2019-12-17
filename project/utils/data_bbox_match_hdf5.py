@@ -7,6 +7,7 @@ import pandas as pd
 import project.download_content as content
 
 from project.utils import data
+from project.model.loss import BBOX_REF as standard_bboxes
 
 from tqdm import tqdm
 
@@ -16,19 +17,8 @@ import ray
 from sklearn.preprocessing import OneHotEncoder
 import multiprocessing
 
-import time
-
 tqdm.pandas()
 modelpath = os.path.join(content.DATAPATH, "MODEL")
-
-standard_bboxes = data.StandardBoudingBoxes(feature_map_sizes=[38, 19, 10, 5, 3, 1],
-                                            ratios_per_layer=[[1, 1/2, 2],
-                                                              [1, 1/2, 1/3, 2, 3],
-                                                              [1, 1/2, 1/3, 2, 3],
-                                                              [1, 1/2, 1/3, 2, 3],
-                                                              [1, 1/2, 2],
-                                                              [1, 1/2, 2]])
-
 
 
 def train_and_save_model(df):
