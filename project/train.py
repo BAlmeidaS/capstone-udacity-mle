@@ -33,7 +33,7 @@ def count_images():
 def load_model():
     model = ssd_model_300()
 
-    opt = SGD(learning_rate=1e-3, momentum=0.9, nesterov=False)
+    opt = SGD(learning_rate=1e-3, momentum=0.9, decay=5e-4, nesterov=False)
     ssd_loss = SSDloss()
     model.compile(optimizer=opt, loss=ssd_loss.loss)
 
