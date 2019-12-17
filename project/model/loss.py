@@ -17,7 +17,7 @@ STANDARD_BBOXES = np.expand_dims(BBOX_REF.references, axis=0)
 
 MINCONST = 1e-15
 
-verbose = 1
+verbose = 0.01
 
 
 class SSDloss():
@@ -39,7 +39,7 @@ class SSDloss():
         loc_loss = tf.reduce_sum(loc * positives)
 
         loss = (conf_loss_pos + conf_loss_neg + 1 * loc_loss) / N
-        if verbose >= 1 and tf.random.uniform((1,))[0] > .99:
+        if verbose > 0 and tf.random.uniform((1,))[0] > (1 - verbose % 1):
             tf.print()
             if verbose >= 2:
                 tf.print('pred: ', y_pred[:, :, -4:])

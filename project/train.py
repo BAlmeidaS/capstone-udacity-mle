@@ -52,20 +52,23 @@ def main(batch_size=20, steps_per_epoch=200, batch_images=150):
     try:
         model = load_model()
         model.summary()
+        # model.load_weights(content.DATAPATH + '/weights300vgg16.h5')
 
         def gen_data():
-            for group in da.get_group_imgs():
-                images, X = da.load_data(group)
+            while True:
+                for group in da.get_group_imgs()[:2]:
+                    print("#"*60, "TREINANDO COM O GRUPO", group, "#"*60)
 
-                batch = []
-                futures = []
+                    images, X = da.load_data(group)
 
-                while True:
+                    batch = []
+                    futures = []
+
                     for i, items in enumerate(
                         grouper(zip(images, X), batch_images), 1
                     ):
                         futures += [da.batch_data_augmentation.remote(items)]
-                        if i % cpu_count() == 0:
+                        if i % (cpu_count() - 2) == 0:
 
                             while len(futures):
                                 done_id, futures = ray.wait(futures)
