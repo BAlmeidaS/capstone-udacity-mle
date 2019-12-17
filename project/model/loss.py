@@ -23,7 +23,7 @@ STANDARD_BBOXES = np.expand_dims(BBOX_REF.references, axis=0)
 
 MINCONST = 1e-15
 
-verbose = False
+verbose = 1
 
 
 class SSDloss():
@@ -45,13 +45,17 @@ class SSDloss():
         loc_loss = tf.reduce_sum(loc * positives)
 
         loss = (conf_loss_pos + conf_loss_neg + 1 * loc_loss) / N
-        if verbose:
-            tf.print('pred: ', y_pred[:, :, -4:])
-            tf.print('loc_loss: ', loc_loss)
+        if verbose >= 1 and tf.random.uniform((1,))[0] > .99:
+            tf.print()
+            if verbose >= 2:
+                tf.print('pred: ', y_pred[:, :, -4:])
+                tf.print('loc_loss: ', loc_loss)
             tf.print('conf_loss_pos: ', conf_loss_pos)
             tf.print('conf_loss_neg: ', conf_loss_neg)
+            tf.print('loc_loss: ', loc_loss)
+            tf.print('bboxes num: ', N)
             tf.print('loss: ', loss)
-            tf.print('\n\n')
+            tf.print('\n')
 
         return tf.convert_to_tensor(loss, dtype=tf.float32)
 
