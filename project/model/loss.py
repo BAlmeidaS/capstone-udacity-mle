@@ -49,11 +49,10 @@ class SSDloss():
             tf.print()
             if verbose >= 2:
                 tf.print('pred: ', y_pred[:, :, -4:])
-                tf.print('loc_loss: ', loc_loss)
-            tf.print('conf_loss_pos: ', conf_loss_pos)
-            tf.print('conf_loss_neg: ', conf_loss_neg)
-            tf.print('loc_loss: ', loc_loss)
-            tf.print('bboxes num: ', N)
+                tf.print('loc_loss: ', loc_loss/N)
+            tf.print('conf_loss_pos: ', conf_loss_pos/N)
+            tf.print('conf_loss_neg: ', conf_loss_neg/N)
+            tf.print('loc_loss: ', loc_loss/N)
             tf.print('loss: ', loss)
             tf.print('\n')
 
