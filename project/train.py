@@ -56,7 +56,7 @@ def main(batch_size=20, steps_per_epoch=200, batch_images=150):
 
         def gen_data():
             while True:
-                for group in da.get_group_imgs()[:2]:
+                for group in da.get_group_imgs():
                     print("#"*60, "TREINANDO COM O GRUPO", group, "#"*60)
 
                     images, X = da.load_data(group)
