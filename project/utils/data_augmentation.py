@@ -216,6 +216,26 @@ def async_zoom(img, bboxes, proportion, delta_x, delta_y):
         return None
 
 
+def saturation(img, bboxes_raw):
+    try:
+        bboxes = deepcopy(bboxes_raw)
+        y = match_bbox(bboxes)
+        img_s = tf.image.random_saturation(img, .4, 1.6)
+        return pre_process(img_s, y)
+    except ValueError:
+        return None
+
+
+def contrast(img, bboxes_raw):
+    try:
+        bboxes = deepcopy(bboxes_raw)
+        y = match_bbox(bboxes)
+        img_c = tf.image.random_contrast(img, .5, .6)
+        return pre_process(img_c, y)
+    except ValueError:
+        return None
+
+
 @ray.remote
 def batch_data_augmentation(batch):
     if batch:
