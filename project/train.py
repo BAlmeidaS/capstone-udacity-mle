@@ -46,7 +46,7 @@ def grouper(iterable, n, fillvalue=None):
     return zip_longest(*args, fillvalue=fillvalue)
 
 
-def main(batch_size=20, steps_per_epoch=200, batch_images=150):
+def main(batch_size=24, steps_per_epoch=200, batch_images=200):
     ray.init()
 
     try:
