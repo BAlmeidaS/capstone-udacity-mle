@@ -17,12 +17,6 @@ def main():
     filepath = os.path.join(modelpath, "data_preprocessed.h5")
     all_train = pd.read_hdf(filepath, 'X', mode='r')
 
-    # adding a column with amount of bbox matched
-    all_train['bbox_count'] = all_train.bbox_ref.apply(lambda x: len(x))
-
-    # using only bboxes that have a match with some default bbox
-    all_train = all_train[all_train.bbox_count > 0]
-
     print(f"There are {len(all_train)} bounding boxes matched...")
 
     # setting path to data
@@ -35,18 +29,17 @@ def main():
     f = h5py.File(datapath, 'w')
 
     # size of the hfd5 group
-    group_size = 500000
+    group_size = 300000
 
     try:
         # get the first image
         img = all_train.iloc[0]
 
-        # setting initial states ti iterate over all dataframe
+        # setting initial states to iterate over all dataframe
         img_name = img[0]
         img_path = img[7]
         images = []
-        target = [[img[13:-2].tolist() + img[9:13].tolist()],
-                  [list(img[-2])]]
+        target = [img[13:-1].tolist() + img[9:13].tolist()]
 
         # iterate over all data set
         for i, img in tqdm(enumerate(all_train.iloc[:, :].itertuples())):
@@ -62,11 +55,13 @@ def main():
 
                 # create a dataset with the position and classification
                 f[group].create_dataset(name=img_name,
-                                        data=target[0],
-                                        dtype=np.float32)
+                                        data=target,
+                                        dtype=np.float32,
+                                        compression='gzip',
+                                        compression_opts=4)
 
                 # clean all states
-                target = [[], []]
+                target = []
                 img_name = img[1]
                 img_path = img[8]
 
@@ -75,20 +70,25 @@ def main():
                 f[group].create_dataset(name='images',
                                         shape=(len(images), 2),
                                         data=images,
-                                        dtype=h5py.special_dtype(vlen=str))
+                                        dtype=h5py.special_dtype(vlen=str),
+                                        compression='gzip',
+                                        compression_opts=4)
                 images = []
 
-            target[0].append(list(img[14:-2] + img[10:14]))
-            target[1].append(list(img[-2]))
+            target.append(list(img[14:-1] + img[10:14]))
 
         f[group].create_dataset(name=img_name,
                                 data=target[0],
-                                dtype=np.float32)
+                                dtype=np.float32,
+                                compression='gzip',
+                                compression_opts=4)
 
         f[group].create_dataset(name='images',
                                 shape=(len(images), 2),
                                 data=images,
-                                dtype=h5py.special_dtype(vlen=str))
+                                dtype=h5py.special_dtype(vlen=str),
+                                compression='gzip',
+                                compression_opts=4)
 
     finally:
         f.close()
