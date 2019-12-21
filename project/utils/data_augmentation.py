@@ -226,23 +226,7 @@ def batch_data_augmentation(batch):
 def data_augmentation(image_info, bboxes):
     img_bin = image.load_img('project/' + image_info[1], target_size=(300, 300))
     img = image.img_to_array(img_bin)
-    # futures = [async_original_image.remote(img, bboxes),
-    #            async_flip_horiz.remote(img, bboxes),
-    #            async_flip_vert.remote(img, bboxes),
-    #            async_flip_both.remote(img, bboxes),
-    #            async_zoom.remote(img, bboxes, .84, 0, 0),
-    #            async_zoom.remote(img, bboxes, .7, 0, 0),
-    #            async_zoom.remote(img, bboxes, .6, 0, 0),
-    #            async_zoom.remote(img, bboxes, .8, -.099, -.099),
-    #            async_zoom.remote(img, bboxes, .8, .099, -.099),
-    #            async_zoom.remote(img, bboxes, .8, -.099, .099),
-    #            async_zoom.remote(img, bboxes, .8, .099, .099),
-    #            async_zoom.remote(img, bboxes, .6, -.2, -.2),
-    #            async_zoom.remote(img, bboxes, .6, .2, -.2),
-    #            async_zoom.remote(img, bboxes, .6, -.2, .2),
-    #            async_zoom.remote(img, bboxes, .6, .2, .2)]
 
-    # results = ray.get(futures)
     results = [original_image(img, bboxes),
                flip_horiz(img, bboxes),
                flip_vert(img, bboxes),
@@ -260,85 +244,6 @@ def data_augmentation(image_info, bboxes):
                zoom(img, bboxes, .6, .2, .2)]
 
     return list(filter(partial(is_not, None), results))
-
-
-def gen_data_augmentation(image_info, bboxes):
-    img_bin = image.load_img('project/' + image_info[1], target_size=(300, 300))
-    img = image.img_to_array(img_bin)
-
-    yield original_image(img, bboxes)
-
-    yield flip_horiz(img, bboxes)
-
-    yield flip_vert(img, bboxes)
-
-    yield flip_both(img, bboxes)
-
-    # zoom in center
-    try:
-        yield zoom(img, bboxes, .84, 0, 0)
-    except ValueError:
-        pass
-
-    # zoom in center 2
-    try:
-        yield zoom(img, bboxes, .7, 0, 0)
-    except ValueError:
-        pass
-
-    # zoom in center 3
-    try:
-        yield zoom(img, bboxes, .6, 0, 0)
-    except ValueError:
-        pass
-
-    # zoom in top left
-    try:
-        yield zoom(img, bboxes, .8, -.099, -.099)
-    except ValueError:
-        pass
-
-    # zoom in top right
-    try:
-        yield zoom(img, bboxes, .8, .099, -.099)
-    except ValueError:
-        pass
-
-    # zoom in bottom left
-    try:
-        yield zoom(img, bboxes, .8, -.099, .099)
-    except ValueError:
-        pass
-
-    # zoom in bottom right
-    try:
-        yield zoom(img, bboxes, .8, .099, .099)
-    except ValueError:
-        pass
-
-    # zoom in top left 2
-    try:
-        yield zoom(img, bboxes, .6, -.2, -.2)
-    except ValueError:
-        pass
-
-    # zoom in top right 2
-    try:
-        yield zoom(img, bboxes, .6, .2, -.2)
-    except ValueError:
-        pass
-
-    # zoom in bottom left 2
-    try:
-        yield zoom(img, bboxes, .6, -.2, .2)
-    except ValueError:
-        pass
-
-    # zoom in bottom right 2
-    try:
-        yield zoom(img, bboxes, .6, .2, .2)
-    except ValueError:
-        pass
 
 
 def main():
