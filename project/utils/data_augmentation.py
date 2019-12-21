@@ -119,11 +119,20 @@ def normalize(img):
     return (img - np.mean(img)) / (np.std(img) + 1e-15)
 
 
+def relevant_classes(y):
+    # 0 is the no-class, -4 to -1 is the position of bounding box,
+    # the other numbers can be understood in class-exploration notebook
+    return y[:, :, [0, 14, 53, 64, 71, 91, 105, 116, 185, 195, 199, 203, 216,
+                    257, 259, 261, 263, 264, 266, 267, 268, 269, 270, 271, 301,
+                    320, 321, 380, 392, 465, 467, 483, 501, 513, 535, 552, 566,
+                    581, 586, 593, -4, -3, -2, -1]]
+
+
 def pre_process(img, y):
     img = np.expand_dims(img, axis=0)
     y = np.expand_dims(y, axis=0)
 
-    return normalize(img), y
+    return normalize(img), relevant_classes(y)
     # return normalize(img), y[:, :, [0, 53, 301, 465, -4, -3, -2, -1]]
 
 
