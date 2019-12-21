@@ -251,17 +251,26 @@ def data_augmentation(image_info, bboxes):
                flip_horiz(img, bboxes),
                flip_vert(img, bboxes),
                flip_both(img, bboxes),
-               zoom(img, bboxes, .84, 0, 0),
-               zoom(img, bboxes, .7, 0, 0),
-               zoom(img, bboxes, .6, 0, 0),
+               saturation(img, bboxes),
+               contrast(img, bboxes),
                zoom(img, bboxes, .8, -.099, -.099),
-               zoom(img, bboxes, .8, .099, -.099),
+               zoom(img, bboxes, .8,     0, -.099),
+               zoom(img, bboxes, .8,  .099, -.099),
+               zoom(img, bboxes, .8, -.099, 0),
+               zoom(img, bboxes, .8,     0, 0),
+               zoom(img, bboxes, .8,  .099, 0),
                zoom(img, bboxes, .8, -.099, .099),
-               zoom(img, bboxes, .8, .099, .099),
+               zoom(img, bboxes, .8,     0, .099),
+               zoom(img, bboxes, .8,  .099, .099),
                zoom(img, bboxes, .6, -.2, -.2),
-               zoom(img, bboxes, .6, .2, -.2),
+               zoom(img, bboxes, .6,   0, -.2),
+               zoom(img, bboxes, .6,  .2, -.2),
+               zoom(img, bboxes, .6, -.2, 0),
+               zoom(img, bboxes, .6,   0, 0),
+               zoom(img, bboxes, .6,  .2, 0),
                zoom(img, bboxes, .6, -.2, .2),
-               zoom(img, bboxes, .6, .2, .2)]
+               zoom(img, bboxes, .6,   0, .2),
+               zoom(img, bboxes, .6,  .2, .2)]
 
     return list(filter(partial(is_not, None), results))
 
