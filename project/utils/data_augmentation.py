@@ -37,8 +37,8 @@ def get_group_imgs():
 def load_data(group):
     """return an array with images infos"""
     with h5py.File(DATAPATH, 'r') as f:
-        images = f['0']['images'][:]
-        X = np.array([f['0'][i[0]][:] for i in images])
+        images = f[group]['images'][:]
+        X = np.array([f[group][i[0]][:] for i in images])
 
     return images, X
 
