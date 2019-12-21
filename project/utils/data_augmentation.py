@@ -22,7 +22,7 @@ from functools import partial
 logging.getLogger().setLevel(logging.INFO)
 
 DATAPATH = os.path.join(content.DATAPATH, "MODEL",
-                        os.getenv('DATA', 'part_data_300_vgg.h5'))
+                        os.getenv('DATA'))
 
 modelpath = os.path.join(content.DATAPATH, "MODEL")
 
@@ -252,34 +252,65 @@ def batch_data_augmentation(batch):
     return []
 
 
+@ray.remote
+def batch_data_augmentation_2(batch):
+    if batch:
+        return [data_augmentation_2(*item) for item in batch if item is not None]
+    return []
+
+
+@ray.remote
+def batch_data_augmentation_3(batch):
+    if batch:
+        return [data_augmentation_3(*item) for item in batch if item is not None]
+    return []
+
+
 def data_augmentation(image_info, bboxes):
     img_bin = image.load_img('project/' + image_info[1], target_size=(300, 300))
     img = image.img_to_array(img_bin)
 
     results = [original_image(img, bboxes),
                flip_horiz(img, bboxes),
-               flip_vert(img, bboxes),
-               flip_both(img, bboxes),
-               saturation(img, bboxes),
-               contrast(img, bboxes),
-               zoom(img, bboxes, .8, -.099, -.099),
-               zoom(img, bboxes, .8,     0, -.099),
-               zoom(img, bboxes, .8,  .099, -.099),
-               zoom(img, bboxes, .8, -.099, 0),
-               zoom(img, bboxes, .8,     0, 0),
-               zoom(img, bboxes, .8,  .099, 0),
-               zoom(img, bboxes, .8, -.099, .099),
-               zoom(img, bboxes, .8,     0, .099),
-               zoom(img, bboxes, .8,  .099, .099),
                zoom(img, bboxes, .6, -.2, -.2),
                zoom(img, bboxes, .6,   0, -.2),
                zoom(img, bboxes, .6,  .2, -.2),
+               zoom(img, bboxes, .8, -.099, -.099),
+               zoom(img, bboxes, .8,     0, -.099),
+               zoom(img, bboxes, .8,  .099, -.099)]
+
+
+    return list(filter(partial(is_not, None), results))
+
+
+def data_augmentation_2(image_info, bboxes):
+    img_bin = image.load_img('project/' + image_info[1], target_size=(300, 300))
+    img = image.img_to_array(img_bin)
+
+    results = [flip_vert(img, bboxes),
+               flip_both(img, bboxes),
                zoom(img, bboxes, .6, -.2, 0),
                zoom(img, bboxes, .6,   0, 0),
                zoom(img, bboxes, .6,  .2, 0),
                zoom(img, bboxes, .6, -.2, .2),
                zoom(img, bboxes, .6,   0, .2),
                zoom(img, bboxes, .6,  .2, .2)]
+
+    return list(filter(partial(is_not, None), results))
+
+
+def data_augmentation_3(image_info, bboxes):
+    img_bin = image.load_img('project/' + image_info[1], target_size=(300, 300))
+    img = image.img_to_array(img_bin)
+
+    results = [saturation(img, bboxes),
+               contrast(img, bboxes),
+               zoom(img, bboxes, .8, -.099, 0),
+               zoom(img, bboxes, .8,     0, 0),
+               zoom(img, bboxes, .8,  .099, 0),
+               zoom(img, bboxes, .8, -.099, .099),
+               zoom(img, bboxes, .8,     0, .099),
+               zoom(img, bboxes, .8,  .099, .099)]
 
     return list(filter(partial(is_not, None), results))
 
