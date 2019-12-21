@@ -91,16 +91,8 @@ def ssd_model_300(reg=0.00003):
     rconf_6 = layers.Reshape((-1, 4), name='rconf6')(conf_6)
     rconf_6 = layers.Activation('softmax')(rconf_6)
 
-  #  locs = layers.Concatenate(axis=1, name='all_bbox')([rloc_1, rloc_2, rloc_3, rloc_4,
-  #                                                      rloc_5, rloc_6])
-
-  #  confs = layers.Concatenate(axis=1, name='all_preds')([rconf_1, rconf_2, rconf_3, rconf_4,
-  #                                                        rconf_5, rconf_6])
-
     locs = layers.Concatenate(axis=1, name='all_bbox')([rloc_3, rloc_4, rloc_5, rloc_6])
-
     confs = layers.Concatenate(axis=1, name='all_preds')([rconf_3, rconf_4, rconf_5, rconf_6])
-    # confs_softmax = layers.Activation('softmax')(confs)
 
     final = layers.Concatenate(axis=2)([confs, locs])
 
