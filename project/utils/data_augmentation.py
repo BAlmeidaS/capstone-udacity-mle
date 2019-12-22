@@ -42,6 +42,13 @@ def load_data(group):
 
 
 def match_bbox(bboxes):
+    # -4 to -1 is the position of bounding box,
+    # the other numbers can be understood in class-exploration notebook
+    bboxes = bboxes[:, [13, 52, 63, 70, 90, 104, 115, 184, 194, 198, 202, 215,
+                        256, 258, 260, 262, 263, 265, 266, 267, 268, 269, 270,
+                        300, 319, 320, 379, 391, 464, 466, 482, 500, 512, 534,
+                        551, 565, 580, 585, 592, -4, -3, -2, -1]]
+
     y = np.zeros((ALL_ANCHORS.shape[0], bboxes.shape[1] + 1))
     y[:, 0] = 1
 
@@ -49,26 +56,19 @@ def match_bbox(bboxes):
 
     find_anchors = []
 
-    # -4 to -1 is the position of bounding box,
-    # the other numbers can be understood in class-exploration notebook
-    bbs = bboxes[:, [13, 52, 63, 70, 90, 104, 115, 184, 194, 198, 202, 215,
-                     256, 258, 260, 262, 263, 265, 266, 267, 268, 269, 270,
-                     300, 319, 320, 379, 391, 464, 466, 482, 500, 512, 534,
-                     551, 565, 580, 585, 592, -4, -3, -2, -1]]
-
-    for *classes, cx, cy, w, h in bbs:
+    for *classes, cx, cy, w, h in bboxes:
         if sum(classes) > 0:
             ground_truth = np.array([cx, cy, w, h])
             anchors = BBOX_REF.match(ground_truth, iou_threshold)
 
-            find_anchors.append(anchors)
+            find_anchors += anchors.tolist()
+
             for i in anchors:
                 y[i] = [0] + classes + [cx, cy, w, h]
 
-    for anchors in find_anchors:
-        if len(anchors) > 0:
-            return y
-    raise ValueError("There are no bounding boxes match")
+    if len(find_anchors) > 0:
+        return y
+    raise RuntimeError("There are no bounding boxes match")
 
 
 def resize(img, bboxes, proportion=.7, delta_x=0, delta_y=0):
@@ -120,7 +120,7 @@ def find_bbox(bboxes, proportion=.7, delta_x=0.0, delta_y=0.0):
     for ref_bboxes in new_bboxes:
         if len(ref_bboxes) > 0:
             return np.array(new_bboxes)
-    raise ValueError('No bounding boxes in new image')
+    raise RuntimeError('No bounding boxes in new image')
 
 
 def normalize(img):
@@ -139,7 +139,7 @@ def original_image(img, bboxes_raw):
         bboxes = deepcopy(bboxes_raw)
         y = match_bbox(bboxes)
         return pre_process(img, y)
-    except ValueError:
+    except RuntimeError:
         return None
 
 
@@ -152,7 +152,7 @@ def flip_horiz(img, bboxes_raw):
         y = match_bbox(bboxes)
 
         return pre_process(img_flip_h, y)
-    except ValueError:
+    except RuntimeError:
         return None
 
 
@@ -164,7 +164,7 @@ def zoom(img, bboxes_raw, proportion=.7, delta_x=0, delta_y=0):
         y = match_bbox(bboxes)
 
         return pre_process(img_z, y)
-    except ValueError:
+    except RuntimeError:
         return None
 
 
