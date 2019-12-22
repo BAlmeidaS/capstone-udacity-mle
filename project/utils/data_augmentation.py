@@ -271,7 +271,6 @@ def data_augmentation(image_info, bboxes):
     img = image.img_to_array(img_bin)
 
     results = [original_image(img, bboxes),
-               flip_horiz(img, bboxes),
                zoom(img, bboxes, .6, -.2, -.2),
                zoom(img, bboxes, .6,   0, -.2),
                zoom(img, bboxes, .6,  .2, -.2),
@@ -287,14 +286,12 @@ def data_augmentation_2(image_info, bboxes):
     img_bin = image.load_img('project/' + image_info[1], target_size=(300, 300))
     img = image.img_to_array(img_bin)
 
-    results = [flip_vert(img, bboxes),
-               flip_both(img, bboxes),
-               zoom(img, bboxes, .6, -.2, 0),
+    results = [zoom(img, bboxes, .6, -.2, 0),
                zoom(img, bboxes, .6,   0, 0),
                zoom(img, bboxes, .6,  .2, 0),
-               zoom(img, bboxes, .6, -.2, .2),
-               zoom(img, bboxes, .6,   0, .2),
-               zoom(img, bboxes, .6,  .2, .2)]
+               zoom(img, bboxes, .8, -.099, 0),
+               zoom(img, bboxes, .8,     0, 0),
+               zoom(img, bboxes, .8,  .099, 0)]
 
     return list(filter(partial(is_not, None), results))
 
@@ -303,11 +300,10 @@ def data_augmentation_3(image_info, bboxes):
     img_bin = image.load_img('project/' + image_info[1], target_size=(300, 300))
     img = image.img_to_array(img_bin)
 
-    results = [saturation(img, bboxes),
-               contrast(img, bboxes),
-               zoom(img, bboxes, .8, -.099, 0),
-               zoom(img, bboxes, .8,     0, 0),
-               zoom(img, bboxes, .8,  .099, 0),
+    results = [flip_horiz(img, bboxes),
+               zoom(img, bboxes, .6, -.2, .2),
+               zoom(img, bboxes, .6,   0, .2),
+               zoom(img, bboxes, .6,  .2, .2),
                zoom(img, bboxes, .8, -.099, .099),
                zoom(img, bboxes, .8,     0, .099),
                zoom(img, bboxes, .8,  .099, .099)]
