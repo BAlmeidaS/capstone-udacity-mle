@@ -41,9 +41,11 @@ def load_data(group):
     return images, X
 
 
-def match_bbox(bboxes, iou_threshold=0.5):
+def match_bbox(bboxes):
     y = np.zeros((ALL_ANCHORS.shape[0], bboxes.shape[1] + 1))
     y[:, 0] = 1
+
+    iou_threshold = np.random.choice([.9]*1 + [.7]*2 + [.5]*5 + [.3]*2 + [.1]*1)
 
     find_anchors = []
     for *classes, cx, cy, w, h in bboxes:
