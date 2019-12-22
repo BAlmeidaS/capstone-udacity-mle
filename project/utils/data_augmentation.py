@@ -174,9 +174,15 @@ def data_augmentation(image_info, bboxes):
     img_bin = image.load_img('project/' + image_info[1], target_size=(300, 300))
     img = image.img_to_array(img_bin)
 
+    z1 = np.random.choice([.15, 0, -.15], size=2, replace=True)
+    z2 = np.random.choice([.15, 0, -.15], size=2, replace=True)
+    # avoiding same zooms
+    while np.array_equal(z1, z2):
+        z2 = np.random.choice([.15, 0, -.15], size=2, replace=True)
+
     results = [original_image(img, bboxes),
                flip_horiz(img, bboxes),
-               zoom(img, bboxes, .7,    0, -.15),
-               zoom(img, bboxes, .7,  .15, -.15)]
+               zoom(img, bboxes, .7, z1[0], z1[1]),
+               zoom(img, bboxes, .7, z2[0], z2[1])]
 
     return list(filter(partial(is_not, None), results))
