@@ -4,15 +4,12 @@ import tensorflow as tf
 import os
 
 from copy import deepcopy
-from tqdm import tqdm
 
 from keras.preprocessing import image
 
 import project.download_content as content
 
 from project.model.loss import BBOX_REF
-
-import ray
 
 import logging
 
@@ -27,6 +24,7 @@ DATAPATH = os.path.join(content.DATAPATH, "MODEL",
 modelpath = os.path.join(content.DATAPATH, "MODEL")
 
 ALL_ANCHORS = BBOX_REF.references.values
+
 
 def get_group_imgs():
     with h5py.File(DATAPATH, 'r') as f:
@@ -43,14 +41,14 @@ def load_data(group):
     return images, X
 
 
-def match_bbox(bboxes):
+def match_bbox(bboxes, iou_threshold=0.5):
     y = np.zeros((ALL_ANCHORS.shape[0], bboxes.shape[1] + 1))
     y[:, 0] = 1
 
     find_anchors = []
     for *classes, cx, cy, w, h in bboxes:
         ground_truth = np.array([cx, cy, w, h])
-        anchors = BBOX_REF.match(ground_truth)
+        anchors = BBOX_REF.match(ground_truth, iou_threshold)
 
         find_anchors.append(anchors)
 
@@ -78,7 +76,7 @@ def resize(img, bboxes, proportion=.7, delta_x=0, delta_y=0):
                                        delta_x + hb,
                                        delta_y + hb]],
                                      [0],
-                                     [300*proportion, 300*proportion])[0],
+                                     [300, 300])[0],
             new_bboxes)
 
 
@@ -145,13 +143,6 @@ def original_image(img, bboxes_raw):
         return None
 
 
-@ray.remote
-def async_original_image(*args):
-    if args is None:
-        return None
-    return original_image(*args)
-
-
 def flip_horiz(img, bboxes_raw):
     try:
         img_flip_h = np.flip(img, 1)
@@ -165,47 +156,6 @@ def flip_horiz(img, bboxes_raw):
         return None
 
 
-@ray.remote
-def async_flip_horiz(img, bboxes):
-    return flip_horiz(img, bboxes)
-
-
-def flip_vert(img, bboxes_raw):
-    try:
-        img_flip_v = np.flip(img, 0)
-
-        bboxes = deepcopy(bboxes_raw)
-        bboxes[:, -3] = 1 - bboxes[:, -3]
-        y = match_bbox(bboxes)
-
-        return pre_process(img_flip_v, y)
-    except ValueError:
-        return None
-
-
-@ray.remote
-def async_flip_vert(img, bboxes):
-    return flip_vert(img, bboxes)
-
-
-def flip_both(img, bboxes_raw):
-    try:
-        img_flip_h_v = np.flip(img, [0, 1])
-
-        bboxes = deepcopy(bboxes_raw)
-        bboxes[:, -4:-2] = 1 - bboxes[:, -4:-2]
-        y = match_bbox(bboxes)
-
-        return pre_process(img_flip_h_v, y)
-    except ValueError:
-        return None
-
-
-@ray.remote
-def async_flip_both(img, bboxes):
-    return flip_both(img, bboxes)
-
-
 def zoom(img, bboxes_raw, proportion=.7, delta_x=0, delta_y=0):
     try:
         bboxes = deepcopy(bboxes_raw)
@@ -217,173 +167,14 @@ def zoom(img, bboxes_raw, proportion=.7, delta_x=0, delta_y=0):
     except ValueError:
         return None
 
-@ray.remote
-def async_zoom(img, bboxes, proportion, delta_x, delta_y):
-    try:
-        return zoom(img, bboxes, proportion, delta_x, delta_y)
-    except ValueError:
-        return None
-
-
-def saturation(img, bboxes_raw):
-    try:
-        bboxes = deepcopy(bboxes_raw)
-        y = match_bbox(bboxes)
-        img_s = tf.image.random_saturation(img, .4, 1.6)
-        return pre_process(img_s, y)
-    except ValueError:
-        return None
-
-
-def contrast(img, bboxes_raw):
-    try:
-        bboxes = deepcopy(bboxes_raw)
-        y = match_bbox(bboxes)
-        img_c = tf.image.random_contrast(img, .5, .6)
-        return pre_process(img_c, y)
-    except ValueError:
-        return None
-
-
-@ray.remote
-def batch_data_augmentation(batch):
-    if batch:
-        return [data_augmentation(*item) for item in batch if item is not None]
-    return []
-
-
-@ray.remote
-def batch_data_augmentation_2(batch):
-    if batch:
-        return [data_augmentation_2(*item) for item in batch if item is not None]
-    return []
-
-
-@ray.remote
-def batch_data_augmentation_3(batch):
-    if batch:
-        return [data_augmentation_3(*item) for item in batch if item is not None]
-    return []
-
 
 def data_augmentation(image_info, bboxes):
     img_bin = image.load_img('project/' + image_info[1], target_size=(300, 300))
     img = image.img_to_array(img_bin)
 
     results = [original_image(img, bboxes),
-               zoom(img, bboxes, .6, -.2, -.2),
-               zoom(img, bboxes, .6,   0, -.2),
-               zoom(img, bboxes, .6,  .2, -.2),
-               zoom(img, bboxes, .8, -.099, -.099),
-               zoom(img, bboxes, .8,     0, -.099),
-               zoom(img, bboxes, .8,  .099, -.099)]
+               flip_horiz(img, bboxes),
+               zoom(img, bboxes, .7,    0, -.15),
+               zoom(img, bboxes, .7,  .15, -.15)]
 
     return list(filter(partial(is_not, None), results))
-
-
-def data_augmentation_2(image_info, bboxes):
-    img_bin = image.load_img('project/' + image_info[1], target_size=(300, 300))
-    img = image.img_to_array(img_bin)
-
-    results = [contrast(img, bboxes),
-               zoom(img, bboxes, .6, -.2, 0),
-               zoom(img, bboxes, .6,   0, 0),
-               zoom(img, bboxes, .6,  .2, 0),
-               zoom(img, bboxes, .8, -.099, 0),
-               zoom(img, bboxes, .8,     0, 0),
-               zoom(img, bboxes, .8,  .099, 0)]
-
-    return list(filter(partial(is_not, None), results))
-
-
-def data_augmentation_3(image_info, bboxes):
-    img_bin = image.load_img('project/' + image_info[1], target_size=(300, 300))
-    img = image.img_to_array(img_bin)
-
-    results = [flip_horiz(img, bboxes),
-               zoom(img, bboxes, .6, -.2, .2),
-               zoom(img, bboxes, .6,   0, .2),
-               zoom(img, bboxes, .6,  .2, .2),
-               zoom(img, bboxes, .8, -.099, .099),
-               zoom(img, bboxes, .8,     0, .099),
-               zoom(img, bboxes, .8,  .099, .099)]
-
-    return list(filter(partial(is_not, None), results))
-
-
-def main():
-    def gen_data():
-        for group in get_group_imgs():
-            images, X = load_data(group)
-
-            for image_info, bboxes in zip(images, X):
-                data_generator = data_augmentation(image_info, bboxes)
-
-                try:
-                    img, y = next(data_generator)
-
-                    img = np.expand_dims(img, axis=0)
-                    y = np.expand_dims(y, axis=0)
-
-                    # normalize pixels
-                    yield ((img - np.mean(img)) / (np.std(img) + 1e-15)), y
-                except StopIteration:
-                    break
-
-    # setting path to data
-    datapath = os.path.join(modelpath, "data_augmentation_300_vgg.h5")
-
-    # open file and maintain it opened
-    f = h5py.File(datapath, 'w')
-
-    # size of the hfd5 group
-    group_size = 10000
-
-    try:
-        g = gen_data()
-
-        data_ref = []
-
-        try:
-            for i, (x, y) in tqdm(enumerate(g)):
-                if i % group_size == 0:
-                    group = str(int(i/group_size))
-                    f.create_group(group)
-
-                f[group].create_dataset(name=f"{i}",
-                                        data=x[0],
-                                        dtype=np.float16,
-                                        compression='gzip',
-                                        compression_opts=9)
-
-                f[group].create_dataset(name=f"{i}-loc",
-                                        data=y[0][:, -4:],
-                                        dtype=np.float16,
-                                        compression='gzip',
-                                        compression_opts=9)
-
-                f[group].create_dataset(name=f"{i}-conf",
-                                        data=y[0][:, :-4],
-                                        dtype=np.int8,
-                                        compression='gzip',
-                                        compression_opts=9)
-
-                data_ref.append([f"{i}-loc", f"{i}-conf", f"{i}"])
-
-                if (i+1) % group_size == 0:
-                    f[group].create_dataset(name='data',
-                                            data=data_ref,
-                                            dtype=h5py.special_dtype(vlen=str))
-                    data_ref = []
-
-        except StopIteration:
-            f[group].create_dataset(name='data',
-                                    data=data_ref,
-                                    dtype=h5py.special_dtype(vlen=str))
-
-    finally:
-        f.close()
-
-
-if __name__ == '__main__':
-    main()
