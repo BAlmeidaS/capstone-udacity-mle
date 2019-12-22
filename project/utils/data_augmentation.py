@@ -278,7 +278,6 @@ def data_augmentation(image_info, bboxes):
                zoom(img, bboxes, .8,     0, -.099),
                zoom(img, bboxes, .8,  .099, -.099)]
 
-
     return list(filter(partial(is_not, None), results))
 
 
@@ -286,7 +285,8 @@ def data_augmentation_2(image_info, bboxes):
     img_bin = image.load_img('project/' + image_info[1], target_size=(300, 300))
     img = image.img_to_array(img_bin)
 
-    results = [zoom(img, bboxes, .6, -.2, 0),
+    results = [contrast(img, bboxes),
+               zoom(img, bboxes, .6, -.2, 0),
                zoom(img, bboxes, .6,   0, 0),
                zoom(img, bboxes, .6,  .2, 0),
                zoom(img, bboxes, .8, -.099, 0),
