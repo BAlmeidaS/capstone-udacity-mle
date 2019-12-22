@@ -48,14 +48,22 @@ def match_bbox(bboxes):
     iou_threshold = np.random.choice([.9]*1 + [.7]*2 + [.5]*5 + [.3]*2 + [.1]*1)
 
     find_anchors = []
-    for *classes, cx, cy, w, h in bboxes:
-        ground_truth = np.array([cx, cy, w, h])
-        anchors = BBOX_REF.match(ground_truth, iou_threshold)
 
-        find_anchors.append(anchors)
+    # -4 to -1 is the position of bounding box,
+    # the other numbers can be understood in class-exploration notebook
+    bbs = bboxes[:, [13, 52, 63, 70, 90, 104, 115, 184, 194, 198, 202, 215,
+                     256, 258, 260, 262, 263, 265, 266, 267, 268, 269, 270,
+                     300, 319, 320, 379, 391, 464, 466, 482, 500, 512, 534,
+                     551, 565, 580, 585, 592, -4, -3, -2, -1]]
 
-        for i in anchors:
-            y[i] = [0] + classes + [cx, cy, w, h]
+    for *classes, cx, cy, w, h in bbs:
+        if sum(classes) > 0:
+            ground_truth = np.array([cx, cy, w, h])
+            anchors = BBOX_REF.match(ground_truth, iou_threshold)
+
+            find_anchors.append(anchors)
+            for i in anchors:
+                y[i] = [0] + classes + [cx, cy, w, h]
 
     for anchors in find_anchors:
         if len(anchors) > 0:
@@ -119,21 +127,11 @@ def normalize(img):
     return (img - np.mean(img)) / (np.std(img) + 1e-15)
 
 
-def relevant_classes(y):
-    # 0 is the no-class, -4 to -1 is the position of bounding box,
-    # the other numbers can be understood in class-exploration notebook
-    return y[:, :, [0, 14, 53, 64, 71, 91, 105, 116, 185, 195, 199, 203, 216,
-                    257, 259, 261, 263, 264, 266, 267, 268, 269, 270, 271, 301,
-                    320, 321, 380, 392, 465, 467, 483, 501, 513, 535, 552, 566,
-                    581, 586, 593, -4, -3, -2, -1]]
-
-
 def pre_process(img, y):
     img = np.expand_dims(img, axis=0)
     y = np.expand_dims(y, axis=0)
 
-    return normalize(img), relevant_classes(y)
-    # return normalize(img), y[:, :, [0, 53, 301, 465, -4, -3, -2, -1]]
+    return normalize(img), y
 
 
 def original_image(img, bboxes_raw):
