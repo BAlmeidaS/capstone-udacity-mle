@@ -78,7 +78,7 @@ def resize(img, bboxes, proportion=.7, delta_x=0, delta_y=0):
                                        delta_x + hb,
                                        delta_y + hb]],
                                      [0],
-                                     [300, 300])[0],
+                                     [300*proportion, 300*proportion])[0],
             new_bboxes)
 
 
