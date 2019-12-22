@@ -71,25 +71,6 @@ def match_bbox(bboxes):
     raise RuntimeError("There are no bounding boxes match")
 
 
-def resize(img, bboxes, proportion=.7, delta_x=0, delta_y=0):
-    lb = (1.0 - proportion) / 2.0
-    hb = 1.0 - lb
-
-    if delta_x > lb or delta_y > lb:
-        raise RuntimeError("Delta X or Delta Y can't be greater than the half of (1 - proportion)")
-
-    new_bboxes = find_bbox(bboxes, proportion, delta_x, delta_y)
-
-    return (tf.image.crop_and_resize(np.expand_dims(img, axis=0),
-                                     [[delta_x + lb,
-                                       delta_y + lb,
-                                       delta_x + hb,
-                                       delta_y + hb]],
-                                     [0],
-                                     [300, 300])[0],
-            new_bboxes)
-
-
 def resize_params(bboxes, proportion=.7, delta_x=0.0, delta_y=0.0):
     cx_0, cy_0, w_0, h_0 = bboxes
 
@@ -121,6 +102,25 @@ def find_bbox(bboxes, proportion=.7, delta_x=0.0, delta_y=0.0):
         if len(ref_bboxes) > 0:
             return np.array(new_bboxes)
     raise RuntimeError('No bounding boxes in new image')
+
+
+def resize(img, bboxes, proportion=.7, delta_x=0, delta_y=0):
+    lb = (1.0 - proportion) / 2.0
+    hb = 1.0 - lb
+
+    if delta_x > lb or delta_y > lb:
+        raise RuntimeError("Delta X or Delta Y can't be greater than the half of (1 - proportion)")
+
+    new_bboxes = find_bbox(bboxes, proportion, delta_x, delta_y)
+
+    return (tf.image.crop_and_resize(np.expand_dims(img, axis=0),
+                                     [[delta_x + lb,
+                                       delta_y + lb,
+                                       delta_x + hb,
+                                       delta_y + hb]],
+                                     [0],
+                                     [300, 300])[0],
+            new_bboxes)
 
 
 def normalize(img):
