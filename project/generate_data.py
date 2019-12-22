@@ -49,13 +49,14 @@ def save_data(items, file_ref):
     for image_info, bboxes in items:
         processed += da.data_augmentation(image_info, bboxes)
 
-    with h5py.File(file_ref, 'a') as f:
-        batch_x = np.concatenate([x for x, _ in processed], axis=0)
-        batch_y = np.concatenate([y for _, y in processed], axis=0)
+    if len(processed) > 0:
+        with h5py.File(file_ref, 'a') as f:
+            batch_x = np.concatenate([x for x, _ in processed], axis=0)
+            batch_y = np.concatenate([y for _, y in processed], axis=0)
 
-        save_dataset(batch_x, batch_y, f)
-        # for x, y in processed:
-        #     save_dataset(x, y, f, group)
+            save_dataset(batch_x, batch_y, f)
+            # for x, y in processed:
+            #     save_dataset(x, y, f, group)
 
 
 def main(batch_images=100):
