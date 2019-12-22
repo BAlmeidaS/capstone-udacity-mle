@@ -69,7 +69,7 @@ def main(batch_images=100):
         temp_f.close()
 
     try:
-        for group in da.get_group_imgs()[:20]:
+        for group in da.get_group_imgs():
             print("#"*20, f"processing GROUP {group}", "#"*20)
             images, X = da.load_data(group)
 
