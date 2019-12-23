@@ -19,7 +19,7 @@ from functools import partial
 logging.getLogger().setLevel(logging.INFO)
 
 DATAPATH = os.path.join(content.DATAPATH, "MODEL",
-                        os.getenv('DATA'))
+                        os.getenv('DATA', 'data_300_vgg.h5'))
 
 modelpath = os.path.join(content.DATAPATH, "MODEL")
 
