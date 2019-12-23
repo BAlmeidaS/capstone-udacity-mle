@@ -11,6 +11,9 @@ from project.utils import data_augmentation as da
 
 from multiprocessing import cpu_count
 
+from operator import is_not
+from functools import partial
+
 import uuid
 
 # TRAIN_DATAPATH = os.path.join(content.DATAPATH, "MODEL", '39_classes_300x300.h5')
@@ -42,6 +45,8 @@ def grouper(iterable, n, fillvalue=None):
 @ray.remote
 def save_data(items, file_ref):
     processed = []
+
+    items = list(filter(partial(is_not, None), items))
 
     if items is None or len(items) < 1:
         return
