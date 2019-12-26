@@ -80,8 +80,7 @@ def main(batch_size=20, steps_per_epoch=200, batch_images=150):
     # epochs = (num_images * data aug)/(steps_per_epoch * batch_size)
     model.fit_generator(gen_data(),
                         steps_per_epoch=steps_per_epoch,
-                        epochs=total_images,
-                        workers=0)
+                        epochs=total_images)
 
     model.save_weights(content.DATAPATH + '/fullweights300vgg16.h5')
 
