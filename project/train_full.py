@@ -1,10 +1,5 @@
 import h5py
 import numpy as np
-import ray
-from collections import deque
-from itertools import zip_longest
-
-from project.utils import data_augmentation as da
 
 from keras.optimizers import SGD
 
@@ -14,20 +9,6 @@ from project.model.loss import SSDloss
 
 import logging
 logging.getLogger().setLevel(logging.INFO)
-
-from multiprocessing import cpu_count
-
-
-def count_images():
-    groups = da.get_group_imgs()
-
-    count_images = 0
-
-    with h5py.File(da.DATAPATH, 'r') as f:
-        for group in groups:
-            count_images += f[group]['images'][:].shape[0]
-
-    return count_images
 
 
 def load_model():
@@ -40,62 +21,69 @@ def load_model():
     return model
 
 
-def grouper(iterable, n, fillvalue=None):
-    "https://docs.python.org/3/library/itertools.html#itertools-recipes"
-    args = [iter(iterable)] * n
-    return zip_longest(*args, fillvalue=fillvalue)
-
-
 def main(batch_size=20, steps_per_epoch=200, batch_images=150):
-    ray.init()
+    model = load_model()
+    model.summary()
 
-    try:
-        model = load_model()
-        model.summary()
+    def gen_data():
+        # each database with data preprocessed
+        files = [
+            "/media/external/39_classes_300x300_0.h5",
+            "/media/external/39_classes_300x300_1.h5",
+            "/media/external/39_classes_300x300_2.h5",
+            "/media/external/39_classes_300x300_3.h5",
+            "/media/external/39_classes_300x300_4.h5",
+            "/media/external/39_classes_300x300_5.h5",
+            "/media/external/39_classes_300x300_6.h5",
+            "/media/external/39_classes_300x300_7.h5",
+        ]
 
-        def gen_data():
-            for group in da.get_group_imgs():
-                images, X = da.load_data(group)
+        # this while true is to avoid keras error with generator functions
+        while True:
+            # X and y are preloading data for X and y (must be greater than
+            # batch size
+            X = None
+            y = None
 
-                batch = []
-                futures = []
+            # iterate in each file
+            for f_path in files:
+                f = h5py.File(f_path, 'r')
 
-                while True:
-                    for i, items in enumerate(
-                        grouper(zip(images, X), batch_images), 1
-                    ):
-                        futures += [da.batch_data_augmentation.remote(items)]
-                        if i % cpu_count() == 0:
+                try:
+                    for x_ref, y_ref in f['images']:
+                        if X is None and y is None:
+                            # preload the first data ref
+                            X = f[x_ref][:]
+                            y = f[y_ref][:]
+                        else:
+                            # appending new X in old X
+                            X = np.concatenate([X, f[x_ref][:]], axis=0)
+                            y = np.concatenate([y, f[y_ref][:]], axis=0)
 
-                            while len(futures):
-                                done_id, futures = ray.wait(futures)
-                                results = ray.get(done_id[0])
+                        while X.shape[0] > batch_size:
+                            # getting the first items in each tensor
+                            batch_x = X[:batch_size]
+                            batch_y = y[:batch_size]
 
-                                batch += [item for sublist in results for item in sublist]
+                            # reduncing tensor size of axis -1
+                            X = X[batch_size:]
+                            y = y[batch_size:]
 
-                                while len(batch) > batch_size:
-                                    topk = batch[:batch_size]
-                                    batch = batch[batch_size:]
+                            # yielding batch_x and batch_y to network training
+                            yield batch_x, batch_y
+                finally:
+                    f.close()
 
-                                    imgs = [k[0] for k in topk]
-                                    ys = [k[1] for k in topk]
-                                    batch_x = np.concatenate(imgs, axis=0)
-                                    batch_y = np.concatenate(ys, axis=0)
+    # hdf5 handle notebook explain this number
+    total_images = int(2373601 / (batch_size * steps_per_epoch)) + 1
 
-                                    yield batch_x, batch_y
+    # epochs = (num_images * data aug)/(steps_per_epoch * batch_size)
+    model.fit_generator(gen_data(),
+                        steps_per_epoch=steps_per_epoch,
+                        epochs=total_images,
+                        workers=0)
 
-        # value of how many data augs are made over each image
-        data_aug_empirical = 5
-        # epochs = (num_images * data aug)/(steps_per_epoch * batch_size)
-        model.fit_generator(gen_data(),
-                            steps_per_epoch=steps_per_epoch,
-                            epochs=int((count_images() * data_aug_empirical)
-                                       / (steps_per_epoch * batch_size) + 1),
-                            workers=0)
-
-        model.save_weights(content.DATAPATH + '/fullweights300vgg16.h5')
-    finally:
-        ray.shutdown()
+    model.save_weights(content.DATAPATH + '/fullweights300vgg16.h5')
 
 
 if __name__ == '__main__':
