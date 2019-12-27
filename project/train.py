@@ -1,104 +1,92 @@
 import h5py
+import os
 import numpy as np
-import ray
-from collections import deque
-from itertools import zip_longest
-
-from project.utils import data_augmentation as da
+from random import shuffle
 
 from keras.optimizers import SGD
 
 import project.download_content as content
-from project.model.ssd_model_300 import ssd_model_300
+from project.model.ssd_model_300_full import ssd_model_300
 from project.model.loss import SSDloss
 
 import logging
 logging.getLogger().setLevel(logging.INFO)
 
-from multiprocessing import cpu_count
-
-
-def count_images():
-    groups = da.get_group_imgs()
-
-    count_images = 0
-
-    with h5py.File(da.DATAPATH, 'r') as f:
-        for group in groups:
-            count_images += f[group]['images'][:].shape[0]
-
-    return count_images
-
 
 def load_model():
     model = ssd_model_300()
 
-    opt = SGD(learning_rate=1e-3, momentum=0.9, decay=5e-4, nesterov=False)
+    opt = SGD(learning_rate=1e-3, momentum=0.9, nesterov=False)
     ssd_loss = SSDloss()
     model.compile(optimizer=opt, loss=ssd_loss.loss)
 
     return model
 
 
-def grouper(iterable, n, fillvalue=None):
-    "https://docs.python.org/3/library/itertools.html#itertools-recipes"
-    args = [iter(iterable)] * n
-    return zip_longest(*args, fillvalue=fillvalue)
-
-
 def main(batch_size=20, steps_per_epoch=200, batch_images=150):
-    ray.init()
+    model = load_model()
+    model.summary()
 
-    try:
-        model = load_model()
-        model.summary()
-        # model.load_weights(content.DATAPATH + '/weights300vgg16.h5')
+    def gen_data():
+        # each database with data preprocessed
+        files = [
+            os.path.join(content.DATAPATH, 'MODEL', '3_classes_300x300.h5_3.h5'),
+            os.path.join(content.DATAPATH, 'MODEL', '3_classes_300x300.h5_4.h5'),
+            os.path.join(content.DATAPATH, 'MODEL', '3_classes_300x300.h5_7.h5'),
+            os.path.join(content.DATAPATH, 'MODEL', '3_classes_300x300.h5_1.h5'),
+            os.path.join(content.DATAPATH, 'MODEL', '3_classes_300x300.h5_2.h5'),
+            os.path.join(content.DATAPATH, 'MODEL', '3_classes_300x300.h5_0.h5'),
+            os.path.join(content.DATAPATH, 'MODEL', '3_classes_300x300.h5_5.h5'),
+            os.path.join(content.DATAPATH, 'MODEL', '3_classes_300x300.h5_6.h5'),
+        ]
 
-        def gen_data():
-            while True:
-                for group in da.get_group_imgs():
-                    print("#"*60, "TREINANDO COM O GRUPO", group, "#"*60)
+        # this while true is to avoid keras error with generator functions
+        while True:
+            # X and y are preloading data for X and y (must be greater than
+            # batch size
+            X = None
+            y = None
 
-                    images, X = da.load_data(group)
+            # iterate in each file
+            for f_path in files:
+                f = h5py.File(f_path, 'r')
+                images = f['images']
+                shuffle(images)
 
-                    batch = []
-                    futures = []
+                try:
+                    for x_ref, y_ref in images:
+                        if X is None and y is None:
+                            # preload the first data ref
+                            X = f[x_ref][:]
+                            y = f[y_ref][:]
+                        else:
+                            # appending new X in old X
+                            X = np.concatenate([X, f[x_ref][:]], axis=0)
+                            y = np.concatenate([y, f[y_ref][:]], axis=0)
 
-                    for i, items in enumerate(
-                        grouper(zip(images, X), batch_images), 1
-                    ):
-                        futures += [da.batch_data_augmentation.remote(items)]
-                        if i % (cpu_count() - 2) == 0:
+                        while X.shape[0] > batch_size:
+                            # getting the first items in each tensor
+                            batch_x = X[:batch_size]
+                            batch_y = y[:batch_size]
 
-                            while len(futures):
-                                done_id, futures = ray.wait(futures)
-                                results = ray.get(done_id[0])
+                            # reduncing tensor size of axis -1
+                            X = X[batch_size:]
+                            y = y[batch_size:]
 
-                                batch += [item for sublist in results for item in sublist]
+                            # yielding batch_x and batch_y to network training
+                            yield batch_x, batch_y
+                finally:
+                    f.close()
 
-                                while len(batch) > batch_size:
-                                    topk = batch[:batch_size]
-                                    batch = batch[batch_size:]
+    # hdf5 handle notebook explain this number
+    total_images = int(55621 / (batch_size * steps_per_epoch)) + 1
 
-                                    imgs = [k[0] for k in topk]
-                                    ys = [k[1] for k in topk]
-                                    batch_x = np.concatenate(imgs, axis=0)
-                                    batch_y = np.concatenate(ys, axis=0)
+    # epochs = (num_images * data aug)/(steps_per_epoch * batch_size)
+    model.fit_generator(gen_data(),
+                        steps_per_epoch=steps_per_epoch,
+                        epochs=total_images)
 
-                                    yield batch_x, batch_y
-
-        # value of how many data augs are made over each image
-        data_aug_empirical = 5
-        # epochs = (num_images * data aug)/(steps_per_epoch * batch_size)
-        model.fit_generator(gen_data(),
-                            steps_per_epoch=steps_per_epoch,
-                            epochs=int((count_images() * data_aug_empirical)
-                                       / (steps_per_epoch * batch_size) + 1),
-                            workers=0)
-
-        model.save_weights(content.DATAPATH + '/weights300vgg16.h5')
-    finally:
-        ray.shutdown()
+    model.save_weights(content.DATAPATH + '/weights300vgg16.h5')
 
 
 if __name__ == '__main__':
