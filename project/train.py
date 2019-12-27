@@ -5,7 +5,7 @@ import numpy as np
 from keras.optimizers import SGD
 
 import project.download_content as content
-from project.model.ssd_model_300_full import ssd_model_300
+from project.model.ssd_model_300 import ssd_model_300
 from project.model.loss import SSDloss
 
 import logging
