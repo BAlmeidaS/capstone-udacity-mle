@@ -25,6 +25,8 @@ def main(batch_size=20, steps_per_epoch=200, batch_images=150):
     model = load_model()
     model.summary()
 
+    # model.load_weights(content.DATAPATH + '/0to3-full-weights300vgg16.h5')
+
     def gen_data():
         # each database with data preprocessed
         files = [
@@ -46,7 +48,7 @@ def main(batch_size=20, steps_per_epoch=200, batch_images=150):
             y = None
 
             # iterate in each file
-            for f_path in files:
+            for f_path in files[:4]:
                 f = h5py.File(f_path, 'r')
                 images = f['images'][:]
                 np.random.shuffle(images)
@@ -77,7 +79,7 @@ def main(batch_size=20, steps_per_epoch=200, batch_images=150):
                     f.close()
 
     # hdf5 handle notebook explain this number
-    total_images = int(2373601 / (batch_size * steps_per_epoch)) + 1
+    total_images = int((2373601/2) / (batch_size * steps_per_epoch)) + 1
 
     # epochs = (num_images * data aug)/(steps_per_epoch * batch_size)
     model.fit_generator(gen_data(),
@@ -85,7 +87,7 @@ def main(batch_size=20, steps_per_epoch=200, batch_images=150):
                         epochs=total_images,
                         workers=0)
 
-    model.save_weights(content.DATAPATH + '/fullweights300vgg16.h5')
+    model.save_weights(content.DATAPATH + '/0to3-full-weights300vgg16.h5')
 
 
 if __name__ == '__main__':
