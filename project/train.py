@@ -1,7 +1,6 @@
 import h5py
 import os
 import numpy as np
-from random import shuffle
 
 from keras.optimizers import SGD
 
@@ -50,8 +49,8 @@ def main(batch_size=20, steps_per_epoch=200, batch_images=150):
             # iterate in each file
             for f_path in files:
                 f = h5py.File(f_path, 'r')
-                images = f['images']
-                shuffle(images)
+                images = f['images'][:]
+                np.random.shuffle(images)
 
                 try:
                     for x_ref, y_ref in images:

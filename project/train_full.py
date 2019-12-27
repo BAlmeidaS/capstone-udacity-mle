@@ -28,14 +28,14 @@ def main(batch_size=20, steps_per_epoch=200, batch_images=150):
     def gen_data():
         # each database with data preprocessed
         files = [
-            "/media/external/39_classes_300x300_0.h5",
-            "/media/external/39_classes_300x300_1.h5",
-            "/media/external/39_classes_300x300_2.h5",
             "/media/external/39_classes_300x300_3.h5",
-            "/media/external/39_classes_300x300_4.h5",
-            "/media/external/39_classes_300x300_5.h5",
             "/media/external/39_classes_300x300_6.h5",
             "/media/external/39_classes_300x300_7.h5",
+            "/media/external/39_classes_300x300_0.h5",
+            "/media/external/39_classes_300x300_2.h5",
+            "/media/external/39_classes_300x300_5.h5",
+            "/media/external/39_classes_300x300_1.h5",
+            "/media/external/39_classes_300x300_4.h5",
         ]
 
         # this while true is to avoid keras error with generator functions
@@ -48,9 +48,11 @@ def main(batch_size=20, steps_per_epoch=200, batch_images=150):
             # iterate in each file
             for f_path in files:
                 f = h5py.File(f_path, 'r')
+                images = f['images'][:]
+                np.random.shuffle(images)
 
                 try:
-                    for x_ref, y_ref in f['images']:
+                    for x_ref, y_ref in images:
                         if X is None and y is None:
                             # preload the first data ref
                             X = f[x_ref][:]
