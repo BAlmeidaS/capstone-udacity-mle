@@ -44,10 +44,11 @@ def load_data(group):
 def match_bbox(bboxes):
     # -4 to -1 is the position of bounding box,
     # the other numbers can be understood in class-exploration notebook
-    bboxes = bboxes[:, [13, 52, 63, 70, 90, 104, 115, 184, 194, 198, 202, 215,
-                        256, 258, 260, 262, 263, 265, 266, 267, 268, 269, 270,
-                        300, 319, 320, 379, 391, 464, 466, 482, 500, 512, 534,
-                        551, 565, 580, 585, 592, -4, -3, -2, -1]]
+    bboxes = bboxes[:, [52, 300, 464, -4, -3, -2, -1]]
+    # bboxes = bboxes[:, [13, 52, 63, 70, 90, 104, 115, 184, 194, 198, 202, 215,
+    #                     256, 258, 260, 262, 263, 265, 266, 267, 268, 269, 270,
+    #                     300, 319, 320, 379, 391, 464, 466, 482, 500, 512, 534,
+    #                     551, 565, 580, 585, 592, -4, -3, -2, -1]]
 
     y = np.zeros((ALL_ANCHORS.shape[0], bboxes.shape[1] + 1))
     y[:, 0] = 1

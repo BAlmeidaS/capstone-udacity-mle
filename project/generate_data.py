@@ -8,6 +8,7 @@ from itertools import zip_longest, cycle
 from tqdm import tqdm
 
 from project.utils import data_augmentation as da
+import project.download_content as content
 
 from multiprocessing import cpu_count
 
@@ -16,8 +17,8 @@ from functools import partial
 
 import uuid
 
-# TRAIN_DATAPATH = os.path.join(content.DATAPATH, "MODEL", '39_classes_300x300.h5')
-TRAIN_DATAPATH = os.path.join("/media/external", '39_classes_300x300')
+TRAIN_DATAPATH = os.path.join(content.DATAPATH, "MODEL", '3_classes_300x300.h5')
+# TRAIN_DATAPATH = os.path.join("/media/external", '39_classes_300x300')
 
 
 def save_dataset(x, y, file_ref):
