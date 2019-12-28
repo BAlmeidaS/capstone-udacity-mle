@@ -13,6 +13,16 @@ def all_train() -> pd.DataFrame:
     return pd.read_csv(METAPATH + '/enriched_train_bbox.csv')
 
 
+def all_validation() -> pd.DataFrame:
+    """Get all cross validation data"""
+    return pd.read_csv(METAPATH + '/enriched_val_bbox.csv')
+
+
+def all_test() -> pd.DataFrame:
+    """Get all test data"""
+    return pd.read_csv(METAPATH + '/enriched_test_bbox.csv')
+
+
 class StandardBoudingBoxes:
     def __init__(self, feature_map_sizes, ratios_per_layer):
         if len(feature_map_sizes) != len(ratios_per_layer):
