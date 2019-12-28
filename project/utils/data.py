@@ -13,23 +13,6 @@ def all_train() -> pd.DataFrame:
     return pd.read_csv(METAPATH + '/enriched_train_bbox.csv')
 
 
-def boats() -> pd.DataFrame:
-    """Get all train data with boats in bounding boxes"""
-    return all_train().query("LabelSemantic == 'Boat'")
-
-
-def group_images(df: pd.DataFrame) -> pd.DataFrame:
-    """return a dataframe with all images grouped"""
-    imgs = df[['ImageID', 'Path']].drop_duplicates()
-    imgs.set_index('ImageID', inplace=True)
-
-    for c in ['cx', 'cy', 'w', 'h', 'bbox_ref']:
-        imgs = imgs.join(boats.groupby('ImageID')[c].apply(list))
-
-    imgs.reset_index(inplace=True)
-    return imgs
-
-
 class StandardBoudingBoxes:
     def __init__(self, feature_map_sizes, ratios_per_layer):
         if len(feature_map_sizes) != len(ratios_per_layer):
@@ -91,9 +74,7 @@ class StandardBoudingBoxes:
                 arr.append([cx, cy, w, h])
         return arr
 
-
     def _func_scale(self, layer_depth, max_depth):
         s_min = .2
         s_max = .9
         return s_min + ((s_max - s_min)/(max_depth - 1)) * (layer_depth - 1)
-
