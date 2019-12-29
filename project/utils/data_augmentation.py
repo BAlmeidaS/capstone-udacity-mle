@@ -123,7 +123,7 @@ def resize(img, bboxes, proportion=.7, delta_x=0, delta_y=0):
 
 
 def normalize(img):
-    return (img - np.mean(img)) / (np.std(img) + 1e-15)
+    return (img - np.mean(img)) / (np.max(img) - np.min(img) + 1e-15)
 
 
 def pre_process(img, y):
