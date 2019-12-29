@@ -32,7 +32,7 @@ def create_target(df, prefix):
         img_name = img[0]
         img_path = img[7]
         images = []
-        target = [img[13:-1].tolist() + img[9:13].tolist()]
+        target = [img[13:].tolist() + img[9:13].tolist()]
 
         # iterate over all data set
         for i, img in tqdm(enumerate(df.iloc[:, :].itertuples())):
@@ -54,7 +54,7 @@ def create_target(df, prefix):
                 img_name = img[1]
                 img_path = img[8]
 
-            target.append(list(img[14:-1] + img[10:14]))
+            target.append(list(img[14:] + img[10:14]))
 
         f.create_dataset(name=img_name,
                          data=target[0],

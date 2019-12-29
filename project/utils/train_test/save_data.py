@@ -22,7 +22,7 @@ import uuid
 TRAIN_DATAPATH = os.path.join("/media/external", '39_classes_300x300')
 
 
-def save_dataset(x, y, i, file_ref):
+def save_dataset(x, y, i, b, file_ref):
     id = uuid.uuid4()
 
     file_ref.create_dataset(name=f"{id}-x",
@@ -44,6 +44,16 @@ def save_dataset(x, y, i, file_ref):
                             compression='gzip',
                             compression_opts=9)
 
+    group = f"{id}-bboxes"
+    file_ref.create_group(group)
+
+    for bboxes, info in zip(b, i):
+        file_ref[group].create_dataset(name=info[0].decode('ascii'),
+                                       data=bboxes,
+                                       dtype=np.float16,
+                                       compression='gzip',
+                                       compression_opts=9)
+
 
 def grouper(iterable, n, fillvalue=None):
     "https://docs.python.org/3/library/itertools.html#itertools-recipes"
@@ -64,6 +74,7 @@ def save_data(items, file_ref):
     # removing Nones added by grouper
     items = list(filter(partial(is_not, None), items))
 
+    processed_b = []
     processed_x = []
     processed_y = []
     processed_i = []
@@ -81,18 +92,20 @@ def save_data(items, file_ref):
                  image_info[1][3:].encode("ascii", "ignore")]
 
         # save the set (image, target) in processed list
+        processed_b += [bboxes]
         processed_x += [np.expand_dims(img, axis=0)]
         processed_y += [np.expand_dims(target, axis=0)]
         processed_i += [np.expand_dims(infos, axis=0)]
 
     with h5py.File(file_ref, 'a') as f:
         # split processed list in X and  y
+        batch_b = processed_b
         batch_x = np.concatenate(processed_x)
         batch_y = np.concatenate(processed_y)
         batch_i = np.concatenate(processed_i)
 
         # save these batches
-        save_dataset(batch_x, batch_y, batch_i, f)
+        save_dataset(batch_x, batch_y, batch_i, batch_b, f)
 
 
 def save_batch(images, X, prefix, batch_images=300):
