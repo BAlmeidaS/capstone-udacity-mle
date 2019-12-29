@@ -41,7 +41,7 @@ def load_data(group):
     return images, X
 
 
-def match_bbox(bboxes):
+def match_bbox(bboxes, unmatch_return=False):
     # -4 to -1 is the position of bounding box,
     # the other numbers can be understood in class-exploration notebook
     bboxes = bboxes[:, [13, 52, 63, 70, 90, 104, 115, 184, 194, 198, 202, 215,
@@ -66,7 +66,7 @@ def match_bbox(bboxes):
             for i in anchors:
                 y[i] = [0] + classes + [cx, cy, w, h]
 
-    if len(find_anchors) > 0:
+    if len(find_anchors) > 0 or unmatch_return:
         return y
     raise RuntimeError("There are no bounding boxes match")
 
