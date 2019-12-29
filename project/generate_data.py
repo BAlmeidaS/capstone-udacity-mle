@@ -60,11 +60,9 @@ def save_data(items, file_ref):
             batch_y = np.concatenate([y for _, y in processed], axis=0)
 
             save_dataset(batch_x, batch_y, f)
-            # for x, y in processed:
-            #     save_dataset(x, y, f, group)
 
 
-def main(batch_images=100):
+def main(batch_images=150):
     ray.init()
 
     files = [f"{TRAIN_DATAPATH}_{i}.h5" for i in range(cpu_count())]
