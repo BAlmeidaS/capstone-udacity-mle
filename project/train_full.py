@@ -79,7 +79,7 @@ def main(batch_size=20, steps_per_epoch=200, batch_images=150):
                     f.close()
 
     # hdf5 handle notebook explain this number
-    total_images = int((2373601/2) / (batch_size * steps_per_epoch)) + 1
+    total_images = int((2370854/2) / (batch_size * steps_per_epoch)) + 1
 
     # epochs = (num_images * data aug)/(steps_per_epoch * batch_size)
     model.fit_generator(gen_data(),
