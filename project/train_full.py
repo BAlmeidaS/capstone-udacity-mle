@@ -50,11 +50,11 @@ def main(batch_size=20, steps_per_epoch=200, batch_images=150):
             # iterate in each file
             for f_path in files[:4]:
                 f = h5py.File(f_path, 'r')
-                images = f['images'][:]
-                np.random.shuffle(images)
+                batches = f['batches'][:]
+                np.random.shuffle(batches)
 
                 try:
-                    for x_ref, y_ref in images:
+                    for x_ref, y_ref in batches:
                         if X is None and y is None:
                             # preload the first data ref
                             X = f[x_ref][:]
