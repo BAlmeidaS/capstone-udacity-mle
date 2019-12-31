@@ -20,7 +20,7 @@ def main():
     print(f"There are {len(all_train)} bounding boxes matched...")
 
     # setting path to data
-    datapath = os.path.join(modelpath, "data_300_vgg.h5")
+    datapath = os.path.join(modelpath, "images_bboxes.h5")
 
     # sorting all train df
     all_train = all_train.sort_values('ImageID')
