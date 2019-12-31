@@ -33,7 +33,7 @@ def train_and_save_model(df):
     return ohc
 
 
-def load_model():
+def load_ohc():
     with open(os.path.join(modelpath, 'ohc.pkl'), 'rb') as f:
         ohc = pickle.load(f)
 
