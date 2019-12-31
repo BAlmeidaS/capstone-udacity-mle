@@ -5,6 +5,8 @@ import ray
 
 from itertools import zip_longest, cycle
 
+from keras.preprocessing import image
+
 from tqdm import tqdm
 
 from project.utils import data_augmentation as da
@@ -17,7 +19,7 @@ from functools import partial
 import uuid
 
 # TRAIN_DATAPATH = os.path.join(content.DATAPATH, "MODEL", '39_classes_300x300.h5')
-TRAIN_DATAPATH = os.path.join("/media/external", '39_classes_300x300')
+TRAIN_DATAPATH = os.path.join("/media/external", 'clothing_300x300')
 
 
 def save_dataset(x, y, file_ref):
@@ -46,13 +48,21 @@ def grouper(iterable, n, fillvalue=None):
 def save_data(items, file_ref):
     processed = []
 
+    # remove nones values from items
     items = list(filter(partial(is_not, None), items))
 
     if items is None or len(items) < 1:
         return
 
     for image_info, bboxes in items:
-        processed += da.data_augmentation(image_info, bboxes)
+        img_bin = image.load_img('project/' + image_info[1], target_size=(300, 300))
+        img = image.img_to_array(img_bin)
+
+        processed += da.original_image(img, bboxes),
+        # processed += da.data_augmentation(image_info, bboxes)
+
+    # remove nones values from processed
+    processed = list(filter(partial(is_not, None), processed))
 
     if len(processed) > 0:
         with h5py.File(file_ref, 'a') as f:

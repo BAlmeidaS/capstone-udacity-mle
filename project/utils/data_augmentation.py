@@ -21,7 +21,7 @@ from project.utils.category_encoder import CategoryEncoder
 logging.getLogger().setLevel(logging.INFO)
 
 DATAPATH = os.path.join(content.DATAPATH, "MODEL",
-                        os.getenv('DATA', 'data_300_vgg.h5'))
+                        os.getenv('DATA', 'images_bboxes.h5'))
 
 modelpath = os.path.join(content.DATAPATH, "MODEL")
 
@@ -51,7 +51,7 @@ def match_bbox(bboxes, unmatch_return=False):
     y = np.zeros((ALL_ANCHORS.shape[0], bboxes.shape[1] + 1))
     y[:, 0] = 1
 
-    iou_threshold = np.random.choice([.9]*1 + [.7]*2 + [.5]*5 + [.3]*2 + [.1]*1)
+    iou_threshold = np.random.choice([.7]*1 + [.6]*3 + [.5]*8 + [.4]*3 + [.3]*1)
 
     find_anchors = []
 
