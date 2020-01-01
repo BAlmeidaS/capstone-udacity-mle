@@ -2,6 +2,7 @@ import h5py
 import numpy as np
 
 from keras.optimizers import SGD
+from keras.callbacks.callbacks import LearningRateScheduler
 
 import project.download_content as content
 from project.model.ssd_model_300_xception import ssd_model_300_xception
@@ -11,10 +12,24 @@ import logging
 logging.getLogger().setLevel(logging.INFO)
 
 
+def lr_schedule_builder(epochs):
+    step = int(epochs/3)
+
+    def lr_schedule(epoch):
+        if epoch < step:
+            return 1e-3
+        elif epoch < 2*step:
+            return 1e-4
+        else:
+            return 1e-5
+
+    return lr_schedule
+
+
 def load_model():
     model = ssd_model_300_xception()
 
-    opt = SGD(learning_rate=1e-3, momentum=0.9, nesterov=False)
+    opt = SGD(learning_rate=1, momentum=0.9, nesterov=False)
     ssd_loss = SSDloss()
     model.compile(optimizer=opt, loss=ssd_loss.loss)
 
@@ -82,9 +97,15 @@ def main(batch_size=20, steps_per_epoch=200, batch_images=150):
     total_images = 2370854
     epochs = int(total_images / (batch_size * steps_per_epoch)) + 1
 
+    lr_schedule = lr_schedule_builder(epochs)
+    lr_callback = LearningRateScheduler(lr_schedule)
+
+    callbacks = [lr_callback]
+
     model.fit_generator(gen_data(),
                         steps_per_epoch=steps_per_epoch,
                         epochs=epochs,
+                        callbacks=callbacks,
                         workers=0)
 
     model.save_weights(content.DATAPATH + '/xception-weights300vgg16.h5')
