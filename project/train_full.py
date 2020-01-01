@@ -4,7 +4,7 @@ import numpy as np
 from keras.optimizers import SGD
 
 import project.download_content as content
-from project.model.ssd_model_300_full import ssd_model_300
+from project.model.ssd_model_300_xception import ssd_model_300_xception
 from project.model.loss import SSDloss
 
 import logging
@@ -12,7 +12,7 @@ logging.getLogger().setLevel(logging.INFO)
 
 
 def load_model():
-    model = ssd_model_300()
+    model = ssd_model_300_xception()
 
     opt = SGD(learning_rate=1e-3, momentum=0.9, nesterov=False)
     ssd_loss = SSDloss()
@@ -79,15 +79,15 @@ def main(batch_size=20, steps_per_epoch=200, batch_images=150):
                     f.close()
 
     # hdf5 handle notebook explain this number
-    total_images = int((2370854/2) / (batch_size * steps_per_epoch)) + 1
+    total_images = 2370854
+    epochs = int(total_images / (batch_size * steps_per_epoch)) + 1
 
-    # epochs = (num_images * data aug)/(steps_per_epoch * batch_size)
     model.fit_generator(gen_data(),
                         steps_per_epoch=steps_per_epoch,
-                        epochs=total_images,
+                        epochs=epochs,
                         workers=0)
 
-    model.save_weights(content.DATAPATH + '/0to3-full-weights300vgg16.h5')
+    model.save_weights(content.DATAPATH + '/xception-weights300vgg16.h5')
 
 
 if __name__ == '__main__':
