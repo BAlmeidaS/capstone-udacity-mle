@@ -1,12 +1,15 @@
 import h5py
 import numpy as np
 
+import argparse
+
 from keras.optimizers import SGD
 from keras.callbacks.callbacks import LearningRateScheduler
 
 import project.download_content as content
-from project.model.ssd_model_300_xception import ssd_model_300_xception
 from project.model.ssd_model_300_vgg import ssd_model_300_vgg
+from project.model.ssd_model_300_resnet import ssd_model_300_resnet
+from project.model.ssd_model_300_xception import ssd_model_300_xception
 from project.model.loss import SSDloss
 
 import logging
@@ -27,8 +30,8 @@ def lr_schedule_builder(epochs):
     return lr_schedule
 
 
-def load_model():
-    model = ssd_model_300_vgg()
+def load_model(fn):
+    model = fn()
 
     opt = SGD(learning_rate=1, momentum=0.9, nesterov=False)
     ssd_loss = SSDloss()
@@ -37,8 +40,8 @@ def load_model():
     return model
 
 
-def main(batch_size=20, steps_per_epoch=200, batch_images=150):
-    model = load_model()
+def main(model_type, model_fn, batch_size=20, steps_per_epoch=200, batch_images=150):
+    model = load_model(model_fn)
     model.summary()
 
     # model.load_weights(content.DATAPATH + '/0to3-full-weights300vgg16.h5')
@@ -109,9 +112,21 @@ def main(batch_size=20, steps_per_epoch=200, batch_images=150):
                         callbacks=callbacks,
                         workers=0)
 
-    model.save_weights(content.DATAPATH + '/xception-weights300vgg16.h5')
+    model.save_weights(content.DATAPATH + f'/{model_type}-weights300vgg16.h5')
 
 
 if __name__ == '__main__':
-    # main(batch_size=1, steps_per_epoch=50)
-    main()
+    parser = argparse.ArgumentParser(description='Running a training')
+    parser.add_argument('base_model', type=str,
+                        help='choose the base model to train ssd',
+                        choices=['vgg', 'resnet', 'xception'])
+    model = parser.parse_args().base_model
+
+    if model == 'xception':
+        fn = ssd_model_300_xception
+    elif model == 'resnet':
+        fn = ssd_model_300_resnet
+    else:
+        fn = ssd_model_300_vgg
+
+    main(model, fn)
