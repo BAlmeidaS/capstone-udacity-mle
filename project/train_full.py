@@ -6,6 +6,7 @@ from keras.callbacks.callbacks import LearningRateScheduler
 
 import project.download_content as content
 from project.model.ssd_model_300_xception import ssd_model_300_xception
+from project.model.ssd_model_300_vgg import ssd_model_300_vgg
 from project.model.loss import SSDloss
 
 import logging
@@ -27,7 +28,7 @@ def lr_schedule_builder(epochs):
 
 
 def load_model():
-    model = ssd_model_300_xception()
+    model = ssd_model_300_vgg()
 
     opt = SGD(learning_rate=1, momentum=0.9, nesterov=False)
     ssd_loss = SSDloss()
