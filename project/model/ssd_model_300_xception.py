@@ -14,6 +14,8 @@ activation = 'relu'
 
 
 def ssd_model_300_xception(reg=0.00003):
+    num_classes = 40
+
     padding = layers.ZeroPadding2D(padding=((0, 1), (0, 1)),
                                    name='conv4_3_padding')(xception.layers[-101].output)
 
@@ -41,12 +43,12 @@ def ssd_model_300_xception(reg=0.00003):
     loc_6 = layers.Conv2D(4 * 4, (1, 1), name='6th_bbs')(conv11_2)
 
     # defining confidences
-    conf_1 = layers.Conv2D(4 * 40, (1, 1), name='1st_conf')(padding)
-    conf_2 = layers.Conv2D(6 * 40, (1, 1), name='2nd_conf')(xception.layers[-11].output)
-    conf_3 = layers.Conv2D(6 * 40, (1, 1), name='3rd_conf')(xception.output)
-    conf_4 = layers.Conv2D(6 * 40, (1, 1), name='4th_conf')(conv9_2)
-    conf_5 = layers.Conv2D(4 * 40, (1, 1), name='5th_conf')(conv10_2)
-    conf_6 = layers.Conv2D(4 * 40, (1, 1), name='6th_conf')(conv11_2)
+    conf_1 = layers.Conv2D(4 * num_classes, (1, 1), name='1st_conf')(padding)
+    conf_2 = layers.Conv2D(6 * num_classes, (1, 1), name='2nd_conf')(xception.layers[-11].output)
+    conf_3 = layers.Conv2D(6 * num_classes, (1, 1), name='3rd_conf')(xception.output)
+    conf_4 = layers.Conv2D(6 * num_classes, (1, 1), name='4th_conf')(conv9_2)
+    conf_5 = layers.Conv2D(4 * num_classes, (1, 1), name='5th_conf')(conv10_2)
+    conf_6 = layers.Conv2D(4 * num_classes, (1, 1), name='6th_conf')(conv11_2)
 
     # reshapes
     rloc_1 = layers.Reshape((-1, 4), name='rloc1')(loc_1)
@@ -56,17 +58,17 @@ def ssd_model_300_xception(reg=0.00003):
     rloc_5 = layers.Reshape((-1, 4), name='rloc5')(loc_5)
     rloc_6 = layers.Reshape((-1, 4), name='rloc6')(loc_6)
 
-    rconf_1 = layers.Reshape((-1, 40), name='rconf1')(conf_1)
+    rconf_1 = layers.Reshape((-1, num_classes), name='rconf1')(conf_1)
     rconf_1 = layers.Activation('softmax')(rconf_1)
-    rconf_2 = layers.Reshape((-1, 40), name='rconf2')(conf_2)
+    rconf_2 = layers.Reshape((-1, num_classes), name='rconf2')(conf_2)
     rconf_2 = layers.Activation('softmax')(rconf_2)
-    rconf_3 = layers.Reshape((-1, 40), name='rconf3')(conf_3)
+    rconf_3 = layers.Reshape((-1, num_classes), name='rconf3')(conf_3)
     rconf_3 = layers.Activation('softmax')(rconf_3)
-    rconf_4 = layers.Reshape((-1, 40), name='rconf4')(conf_4)
+    rconf_4 = layers.Reshape((-1, num_classes), name='rconf4')(conf_4)
     rconf_4 = layers.Activation('softmax')(rconf_4)
-    rconf_5 = layers.Reshape((-1, 40), name='rconf5')(conf_5)
+    rconf_5 = layers.Reshape((-1, num_classes), name='rconf5')(conf_5)
     rconf_5 = layers.Activation('softmax')(rconf_5)
-    rconf_6 = layers.Reshape((-1, 40), name='rconf6')(conf_6)
+    rconf_6 = layers.Reshape((-1, num_classes), name='rconf6')(conf_6)
     rconf_6 = layers.Activation('softmax')(rconf_6)
 
     locs = layers.Concatenate(axis=1, name='all_bbox')([rloc_1, rloc_2, rloc_3, rloc_4,
