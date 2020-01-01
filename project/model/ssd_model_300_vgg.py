@@ -15,7 +15,7 @@ initializer = RandomUniform(minval=-1e-2, maxval=1e-2)
 activation = 'relu'
 
 
-def ssd_model_300(num_classes=40, reg=0.00003):
+def ssd_model_300_vgg(num_classes=40, reg=0.00003):
     conv4_3 = layers.ZeroPadding2D(padding=((0, 1), (0, 1)), name='conv4_3_padding')(BASE_MODEL.layers[-5].output)
 
     pool4 = layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='same', name='pool4')(conv4_3)
