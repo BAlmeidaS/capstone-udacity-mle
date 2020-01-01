@@ -52,20 +52,20 @@ class SSDloss():
         return tf.convert_to_tensor(loss, dtype=tf.float32)
 
     def g_hat(self, loc):
-        g_hat_cx = 5 * tf.math.divide_no_nan(tf.math.subtract(loc[:, :, 0],
+        g_hat_cx = 1 * tf.math.divide_no_nan(tf.math.subtract(loc[:, :, 0],
                                                               STANDARD_BBOXES[:, :, 0]),
                                              STANDARD_BBOXES[:, :, 2])
 
-        g_hat_cy = 5 * tf.math.divide_no_nan(tf.math.subtract(loc[:, :, 1],
+        g_hat_cy = 1 * tf.math.divide_no_nan(tf.math.subtract(loc[:, :, 1],
                                                               STANDARD_BBOXES[:, :, 1]),
                                              STANDARD_BBOXES[:, :, 3])
 
-        g_hat_w = 10 * tf.math.log(
+        g_hat_w = 1 * tf.math.log(
             tf.math.maximum(tf.math.divide_no_nan(loc[:, :, 2],
                                                   STANDARD_BBOXES[:, :, 2]),
                             MINCONST))
 
-        g_hat_h = 10 * tf.math.log(
+        g_hat_h = 1 * tf.math.log(
             tf.math.maximum(tf.math.divide_no_nan(loc[:, :, 3],
                                                   STANDARD_BBOXES[:, :, 3]),
                             MINCONST))
