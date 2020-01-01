@@ -5,10 +5,10 @@ def upper_left(v):
     """upper_left
     finds the lower right position based on an array cointaing in
     each row four values:
-        [cx,cy,h,w]
+        [cx,cy,w,h]
 
     Args:
-        v (np.array): each row [cx, cy, h, w] of a point
+        v (np.array): each row [cx, cy, w, h] of a point
 
     Returns:
         np.array: array with x values of upper left
@@ -21,10 +21,10 @@ def lower_right(v: np.array) -> (np.array, np.array):
     """lower_right
     finds the lower right position based on an array cointaing in
     each row four values:
-        [cx,cy,h,w]
+        [cx,cy,w,h]
 
     Args:
-        v (np.array): each row [cx, cy, h, w]
+        v (np.array): each row [cx, cy, w, h]
 
     Returns:
         np.array: array with x values of lower right
@@ -36,18 +36,18 @@ def lower_right(v: np.array) -> (np.array, np.array):
 def iou(a: np.array, b: np.array, epsilon: float = 1e-7) -> float:
     """ Given two arrays `a` and `b` where each row contains
         a bounding box defined as a list of four numbers:
-            [cx,cy,h,w]
+            [cx,cy,w,h]
         where:
             cx represents center of bounding box in axis x
             cy represents center of bounding box in axis y
-            h represents the height of bounding box
             w represents the width of bounding box
+            h represents the height of bounding box
         It returns the Intersect of Union scores for each corresponding
         pair of boxes.
 
     Args:
-        a (np.array): each row containing [cx, cy, h, w]
-        b (np.array): each row containing [cx, cy, h, w]
+        a (np.array): each row containing [cx, cy, w, h]
+        b (np.array): each row containing [cx, cy, w, h]
 
     Returns:
         float: iou calculated
