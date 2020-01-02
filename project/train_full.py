@@ -18,6 +18,7 @@ logging.getLogger().setLevel(logging.INFO)
 
 def lr_schedule_builder(epochs):
     step = int(epochs/3)
+    print(f'decreasing learning rate for each {step} epochs')
 
     def lr_schedule(epoch):
         if epoch < step:
