@@ -55,11 +55,7 @@ def save_data(items, file_ref):
         return
 
     for image_info, bboxes in items:
-        img_bin = image.load_img('project/' + image_info[1], target_size=(300, 300))
-        img = image.img_to_array(img_bin)
-
-        processed += da.original_image(img, bboxes),
-        # processed += da.data_augmentation(image_info, bboxes)
+        processed += da.data_augmentation(image_info, bboxes)
 
     # remove nones values from processed
     processed = list(filter(partial(is_not, None), processed))

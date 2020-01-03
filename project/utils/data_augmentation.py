@@ -16,7 +16,10 @@ import logging
 from operator import is_not
 from functools import partial
 
-from project.utils.category_encoder import CategoryEncoder
+from project.utils.data_bbox_match_hdf5 import load_ohc
+
+import json
+
 
 logging.getLogger().setLevel(logging.INFO)
 
@@ -26,6 +29,11 @@ DATAPATH = os.path.join(content.DATAPATH, "MODEL",
 modelpath = os.path.join(content.DATAPATH, "MODEL")
 
 ALL_ANCHORS = BBOX_REF.references.values
+
+OHC = load_ohc()
+
+with open(os.path.join(content.DATAPATH, 'data_aug.json')) as f:
+    AUG_CRITERIA = json.load(f)
 
 
 def get_group_imgs():
@@ -46,8 +54,6 @@ def load_data(group):
 def match_bbox(bboxes, unmatch_return=False):
     # -4 to -1 is the position of bounding box,
     # the other numbers can be understood in class-exploration notebook
-    bboxes = CategoryEncoder.transform(bboxes)
-
     y = np.zeros((ALL_ANCHORS.shape[0], bboxes.shape[1] + 1))
     y[:, 0] = 1
 
@@ -142,6 +148,20 @@ def original_image(img, bboxes_raw):
         return None
 
 
+def flip_n_saturation(img, bboxes_raw):
+    try:
+        img_flip_h = np.flip(img, 1)
+        img_s = tf.image.random_saturation(img_flip_h, .4, 1.6)
+
+        bboxes = deepcopy(bboxes_raw)
+        bboxes[:, -4] = 1 - bboxes[:, -4]
+        y = match_bbox(bboxes)
+
+        return pre_process(img_s, y)
+    except RuntimeError:
+        return None
+
+
 def flip_horiz(img, bboxes_raw):
     try:
         img_flip_h = np.flip(img, 1)
@@ -151,6 +171,26 @@ def flip_horiz(img, bboxes_raw):
         y = match_bbox(bboxes)
 
         return pre_process(img_flip_h, y)
+    except RuntimeError:
+        return None
+
+
+def saturation(img, bboxes_raw):
+    try:
+        bboxes = deepcopy(bboxes_raw)
+        y = match_bbox(bboxes)
+        img_s = tf.image.random_saturation(img, .4, 1.6)
+        return pre_process(img_s, y)
+    except RuntimeError:
+        return None
+
+
+def contrast(img, bboxes_raw):
+    try:
+        bboxes = deepcopy(bboxes_raw)
+        y = match_bbox(bboxes)
+        img_c = tf.image.random_contrast(img, .5, .6)
+        return pre_process(img_c, y)
     except RuntimeError:
         return None
 
@@ -167,19 +207,79 @@ def zoom(img, bboxes_raw, proportion=.7, delta_x=0, delta_y=0):
         return None
 
 
+def augumentation_level_0(img, bboxes):
+    return [original_image(img, bboxes)]
+
+
+def augumentation_level_1(img, bboxes):
+    result = augumentation_level_0(img, bboxes)
+    result += [flip_horiz(img, bboxes)]
+    return result
+
+
+def augumentation_level_2(img, bboxes):
+    result = augumentation_level_1(img, bboxes)
+    result += [saturation(img, bboxes)]
+    return result
+
+
+def augumentation_level_3(img, bboxes):
+    result = augumentation_level_2(img, bboxes)
+    result += [contrast(img, bboxes),
+               flip_n_saturation(img, bboxes)]
+    return result
+
+
+def augumentation_level_4(img, bboxes):
+    result = augumentation_level_3(img, bboxes)
+    result += [zoom(img, bboxes, .8, -.099,  .099),
+               zoom(img, bboxes, .8,     0,  .099),
+               zoom(img, bboxes, .8,  .099,  .099),
+               zoom(img, bboxes, .8, -.099,     0),
+               zoom(img, bboxes, .8,     0,     0),
+               zoom(img, bboxes, .8,  .099,     0),
+               zoom(img, bboxes, .8, -.099, -.099),
+               zoom(img, bboxes, .8,     0, -.099),
+               zoom(img, bboxes, .8,  .099, -.099)]
+    return result
+
+
+def augumentation_level_5(img, bboxes):
+    result = augumentation_level_4(img, bboxes)
+    result += [zoom(img, bboxes, .6, -.2,  .2),
+               zoom(img, bboxes, .6,   0,  .2),
+               zoom(img, bboxes, .6,  .2,  .2),
+               zoom(img, bboxes, .6, -.2,   0),
+               zoom(img, bboxes, .6,   0,   0),
+               zoom(img, bboxes, .6,  .2,   0),
+               zoom(img, bboxes, .6, -.2, -.2),
+               zoom(img, bboxes, .6,   0, -.2),
+               zoom(img, bboxes, .6,  .2, -.2),
+               contrast(img, bboxes),
+               flip_n_saturation(img, bboxes)]
+    return result
+
+
+
 def data_augmentation(image_info, bboxes):
     img_bin = image.load_img('project/' + image_info[1], target_size=(300, 300))
     img = image.img_to_array(img_bin)
 
-    z1 = np.random.choice([.15, 0, -.15], size=2, replace=True)
-    z2 = np.random.choice([.15, 0, -.15], size=2, replace=True)
-    # avoiding same zooms
-    while np.array_equal(z1, z2):
-        z2 = np.random.choice([.15, 0, -.15], size=2, replace=True)
+    img_categories = OHC.inverse_transform(bboxes[:, :-4]).flatten()
 
-    results = [original_image(img, bboxes),
-               flip_horiz(img, bboxes),
-               zoom(img, bboxes, .7, z1[0], z1[1]),
-               zoom(img, bboxes, .7, z2[0], z2[1])]
+    aug_level = np.median([AUG_CRITERIA[c] for c in img_categories])
+
+    if aug_level == 0:
+        results = augumentation_level_0(img, bboxes)
+    elif aug_level <= 1:
+        results = augumentation_level_1(img, bboxes)
+    elif aug_level <= 2:
+        results = augumentation_level_2(img, bboxes)
+    elif aug_level <= 3:
+        results = augumentation_level_3(img, bboxes)
+    elif aug_level <= 4:
+        results = augumentation_level_4(img, bboxes)
+    else:
+        results = augumentation_level_5(img, bboxes)
 
     return list(filter(partial(is_not, None), results))
