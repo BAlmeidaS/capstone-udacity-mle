@@ -5,11 +5,10 @@ import ray
 
 from itertools import zip_longest, cycle
 
-from keras.preprocessing import image
-
 from tqdm import tqdm
 
 from project.utils import data_augmentation as da
+import project.download_content as content
 
 from multiprocessing import cpu_count
 
@@ -18,8 +17,8 @@ from functools import partial
 
 import uuid
 
-# TRAIN_DATAPATH = os.path.join(content.DATAPATH, "MODEL", '39_classes_300x300.h5')
-TRAIN_DATAPATH = os.path.join("/media/external", 'clothing_300x300')
+TRAIN_DATAPATH = os.path.join('/media/external', 'all_classes_300x300')
+TRAIN_DATAPATH_AUX = os.path.join(content.DATAPATH, "MODEL", 'all_classes_300x300_7.h5')
 
 
 def save_dataset(x, y, file_ref):
@@ -68,10 +67,10 @@ def save_data(items, file_ref):
             save_dataset(batch_x, batch_y, f)
 
 
-def main(batch_images=150):
+def main(batch_images=30):
     ray.init()
 
-    files = [f"{TRAIN_DATAPATH}_{i}.h5" for i in range(cpu_count())]
+    files = [f"{TRAIN_DATAPATH}_{i}.h5" for i in range(cpu_count()-1)] + [TRAIN_DATAPATH_AUX]
 
     for f in files:
         temp_f = h5py.File(f, 'w')
