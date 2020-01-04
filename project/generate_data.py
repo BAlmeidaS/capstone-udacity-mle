@@ -8,7 +8,7 @@ from itertools import zip_longest, cycle
 from tqdm import tqdm
 
 from project.utils import data_augmentation as da
-import project.download_content as content
+# import project.download_content as content
 
 from multiprocessing import cpu_count
 
@@ -17,8 +17,8 @@ from functools import partial
 
 import uuid
 
-TRAIN_DATAPATH = os.path.join('/media/external', 'all_classes_300x300')
-TRAIN_DATAPATH_AUX = os.path.join(content.DATAPATH, "MODEL", 'all_classes_300x300_7.h5')
+TRAIN_DATAPATH_E = os.path.join('/media/external', 'all_classes_300x300')
+TRAIN_DATAPATH_M = os.path.join('/media/miracle', 'all_classes_300x300')
 
 
 def save_dataset(x, y, file_ref):
@@ -70,7 +70,8 @@ def save_data(items, file_ref):
 def main(batch_images=30):
     ray.init()
 
-    files = [f"{TRAIN_DATAPATH}_{i}.h5" for i in range(cpu_count()-1)] + [TRAIN_DATAPATH_AUX]
+    files = ([f"{TRAIN_DATAPATH_E}_{i}.h5" for i in range(cpu_count()-3)]
+             + [f"{TRAIN_DATAPATH_M}_{i}.h5" for i in range(cpu_count()-3, cpu_count())])
 
     for f in files:
         temp_f = h5py.File(f, 'w')
