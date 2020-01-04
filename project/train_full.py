@@ -50,14 +50,14 @@ def main(model_type, model_fn, batch_size=20, steps_per_epoch=200, batch_images=
     def gen_data():
         # each database with data preprocessed
         files = [
-            "/media/external/39_classes_300x300_3.h5",
-            "/media/external/39_classes_300x300_6.h5",
-            "/media/external/39_classes_300x300_7.h5",
-            "/media/external/39_classes_300x300_0.h5",
-            "/media/external/39_classes_300x300_2.h5",
-            "/media/external/39_classes_300x300_5.h5",
-            "/media/external/39_classes_300x300_1.h5",
-            "/media/external/39_classes_300x300_4.h5",
+            "/media/external/all_classes_300x300_0.h5",
+            "/media/external/all_classes_300x300_1.h5",
+            "/media/external/all_classes_300x300_2.h5",
+            "/media/external/all_classes_300x300_3.h5",
+            "/media/external/all_classes_300x300_4.h5",
+            "/media/external/all_classes_300x300_5.h5",
+            "/media/external/all_classes_300x300_6.h5",
+            "/media/external/all_classes_300x300_7.h5",
         ]
 
         # this while true is to avoid keras error with generator functions
@@ -68,7 +68,7 @@ def main(model_type, model_fn, batch_size=20, steps_per_epoch=200, batch_images=
             y = None
 
             # iterate in each file
-            for f_path in files[:4]:
+            for f_path in files:
                 f = h5py.File(f_path, 'r')
                 batches = f['batches'][:]
                 np.random.shuffle(batches)
@@ -99,7 +99,7 @@ def main(model_type, model_fn, batch_size=20, steps_per_epoch=200, batch_images=
                     f.close()
 
     # hdf5 handle notebook explain this number
-    total_images = 2370854
+    total_images = 2550466
     epochs = int(total_images / (batch_size * steps_per_epoch)) + 1
 
     lr_schedule = lr_schedule_builder(epochs)
