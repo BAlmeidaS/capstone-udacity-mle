@@ -39,7 +39,7 @@ def main():
         img_name = img[0]
         img_path = img[7]
         images = []
-        target = [img[13:-1].tolist() + img[9:13].tolist()]
+        target = [img[13:].tolist() + img[9:13].tolist()]
 
         # iterate over all data set
         for i, img in tqdm(enumerate(all_train.iloc[:, :].itertuples())):
@@ -75,7 +75,7 @@ def main():
                                         compression_opts=4)
                 images = []
 
-            target.append(list(img[14:-1] + img[10:14]))
+            target.append(list(img[14:] + img[10:14]))
 
         f[group].create_dataset(name=img_name,
                                 data=target[0],
