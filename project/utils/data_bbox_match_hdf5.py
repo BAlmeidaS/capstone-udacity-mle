@@ -7,7 +7,6 @@ import pandas as pd
 import project.download_content as content
 
 from project.utils import data
-from project.model.loss import BBOX_REF as standard_bboxes
 
 from tqdm import tqdm
 
@@ -44,8 +43,6 @@ def load_ohc():
 def part_process(df, part):
     # define standard boxes (based on ssd architecture)
     # setting bbox ref which match with standard bboxes designed
-    df['bbox_ref'] = df.apply(standard_bboxes.match, axis=1)
-
     filepath = os.path.join(content.DATAPATH, "MODEL", f"data_preprocessed_{part}.h5")
 
     df.to_hdf(filepath, key='X', mode='w')
