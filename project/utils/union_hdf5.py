@@ -13,7 +13,7 @@ def main():
     modelpath = os.path.join(content.DATAPATH, "MODEL")
 
     df = pd.concat([pd.read_hdf(os.path.join(modelpath, f"data_preprocessed_{i}.h5"),
-                                'X', mode='r') for i in range(24)])
+                                'X', mode='r') for i in range(8)])
 
     filepath = os.path.join(modelpath, "data_preprocessed.h5")
 
