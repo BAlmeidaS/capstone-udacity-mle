@@ -24,9 +24,9 @@ TRAINPATH = os.path.join(METAPATH, 'train_data.h5')
 
 
 def lr_schedule(epoch):
-    if epoch < 5:
+    if epoch < 3:
         return 1e-3
-    elif epoch < 20:
+    elif epoch < 5:
         return 1e-4
     else:
         return 1e-5
@@ -50,7 +50,7 @@ def get_item(x_ref, y_ref):
     return X, y
 
 
-def main(model_type, model_fn, batch_size=20, steps_per_epoch=8130):
+def main(model_type, model_fn, batch_size=20, steps_per_epoch=8130, epochs=5):
     model = load_model(model_fn)
     model.summary()
 
@@ -93,13 +93,11 @@ def main(model_type, model_fn, batch_size=20, steps_per_epoch=8130):
                             # yielding batch_x and batch_y to network training
                             yield batch_x, batch_y
 
-    epochs = 3
-
     lr_callback = LearningRateScheduler(lr_schedule)
 
     callbacks = [lr_callback]
 
-    ray.init()
+    ray.init(num_cpus=6)
     try:
         model.fit_generator(gen_data(),
                             steps_per_epoch=steps_per_epoch,
@@ -126,4 +124,4 @@ if __name__ == '__main__':
     else:
         fn = ssd_model_300_vgg
 
-    main(model, fn)
+    main(model, fn, batch_size=12, steps_per_epoch=13550, epochs=7)
