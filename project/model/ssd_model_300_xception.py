@@ -13,9 +13,7 @@ initializer = RandomUniform(minval=-1e-2, maxval=1e-2)
 activation = 'relu'
 
 
-def ssd_model_300_xception(reg=0.00003):
-    num_classes = 40
-
+def ssd_model_300_xception(num_classes=600, reg=0.00003):
     padding = layers.ZeroPadding2D(padding=((0, 1), (0, 1)),
                                    name='conv4_3_padding')(xception.layers[-101].output)
 
