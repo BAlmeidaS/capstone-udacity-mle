@@ -24,7 +24,7 @@ TRAINPATH = os.path.join(METAPATH, 'train_data.h5')
 
 
 def lr_schedule(epoch):
-    if epoch < 2:
+    if epoch < 5:
         return 1e-3
     elif epoch < 20:
         return 1e-4
