@@ -12,6 +12,7 @@ import project.download_content as content
 from project.model.ssd_model_300_vgg import ssd_model_300_vgg
 from project.model.ssd_model_300_resnet import ssd_model_300_resnet
 from project.model.ssd_model_300_xception import ssd_model_300_xception
+from project.model.ssd_model_300_mobilenet import ssd_model_300_mobilenet
 from project.model.loss import SSDloss
 
 import ray
@@ -114,13 +115,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Running a training')
     parser.add_argument('base_model', type=str,
                         help='choose the base model to train ssd',
-                        choices=['vgg', 'resnet', 'xception'])
+                        choices=['vgg', 'resnet', 'xception', 'mobilenet'])
     model = parser.parse_args().base_model
 
     if model == 'xception':
         fn = ssd_model_300_xception
     elif model == 'resnet':
         fn = ssd_model_300_resnet
+    elif model == 'mobilenet':
+        fn = ssd_model_300_mobilenet
     else:
         fn = ssd_model_300_vgg
 
