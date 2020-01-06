@@ -24,9 +24,9 @@ TRAINPATH = os.path.join(METAPATH, 'train_data_650.h5')
 
 
 def lr_schedule(epoch):
-    if epoch < 5:
+    if epoch < 15:
         return 1e-3
-    elif epoch < 10:
+    elif epoch < 25:
         return 1e-4
     else:
         return 1e-5
@@ -124,4 +124,4 @@ if __name__ == '__main__':
     else:
         fn = ssd_model_300_vgg
 
-    main(model, fn, batch_size=20, steps_per_epoch=1840, epochs=5)
+    main(model, fn, batch_size=20, steps_per_epoch=1837, epochs=30)
