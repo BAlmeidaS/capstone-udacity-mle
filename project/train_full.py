@@ -20,13 +20,13 @@ import logging
 logging.getLogger().setLevel(logging.INFO)
 
 METAPATH = os.path.join(content.DATAPATH, 'METADATA')
-TRAINPATH = os.path.join(METAPATH, 'train_data.h5')
+TRAINPATH = os.path.join(METAPATH, 'train_data_650.h5')
 
 
 def lr_schedule(epoch):
-    if epoch < 3:
+    if epoch < 5:
         return 1e-3
-    elif epoch < 5:
+    elif epoch < 10:
         return 1e-4
     else:
         return 1e-5
@@ -70,7 +70,7 @@ def main(model_type, model_fn, batch_size=20, steps_per_epoch=8130, epochs=5):
             for x_ref, y_ref in batches:
                 results.append(get_item.remote(x_ref, y_ref))
 
-                if len(results) > 20:
+                if len(results) > 10:
                     while len(results) > 0:
                         done_id, results = ray.wait(results)
 
@@ -107,7 +107,7 @@ def main(model_type, model_fn, batch_size=20, steps_per_epoch=8130, epochs=5):
     finally:
         ray.shutdown()
 
-    model.save_weights(content.DATAPATH + f'/{model_type}-weights300vgg16.h5')
+    model.save_weights(content.DATAPATH + f'/{model_type}-weights300.h5')
 
 
 if __name__ == '__main__':
@@ -124,4 +124,4 @@ if __name__ == '__main__':
     else:
         fn = ssd_model_300_vgg
 
-    main(model, fn, batch_size=12, steps_per_epoch=13550, epochs=7)
+    main(model, fn, batch_size=20, steps_per_epoch=1840, epochs=5)
