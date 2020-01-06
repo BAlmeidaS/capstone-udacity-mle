@@ -70,7 +70,7 @@ def main(model_type, model_fn, batch_size=20, steps_per_epoch=8130, epochs=5):
             for x_ref, y_ref in batches:
                 results.append(get_item.remote(x_ref, y_ref))
 
-                if len(results) > 10:
+                if len(results) > 5:
                     while len(results) > 0:
                         done_id, results = ray.wait(results)
 
