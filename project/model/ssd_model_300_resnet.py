@@ -7,6 +7,7 @@ from keras.regularizers import l2
 from keras import layers
 
 from project.model.layers.anchorage import Anchorage
+from project.model.layers.supression import Suppression
 
 RESNET = ResNet50(weights='imagenet', include_top=False, input_shape=(300, 300, 3))
 
@@ -78,7 +79,7 @@ def ssd_model_300_resnet(num_classes=600, reg=0.00003, inference=False):
 
     if inference:
         anc = Anchorage(name='anchorage')(final)
-        final = anc
+        final = Suppression(name='suppresion')(anc)
 
     model = Model(inputs=RESNET.input, output=[final])
     return model
