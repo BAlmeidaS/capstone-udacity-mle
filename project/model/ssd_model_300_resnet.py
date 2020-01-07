@@ -6,6 +6,8 @@ from keras.regularizers import l2
 
 from keras import layers
 
+from project.model.layers.anchorage import Anchorage
+
 RESNET = ResNet50(weights='imagenet', include_top=False, input_shape=(300, 300, 3))
 
 initializer = RandomUniform(minval=-1e-2, maxval=1e-2)
@@ -13,7 +15,7 @@ initializer = RandomUniform(minval=-1e-2, maxval=1e-2)
 activation = 'relu'
 
 
-def ssd_model_300_resnet(num_classes=600, reg=0.00003):
+def ssd_model_300_resnet(num_classes=600, reg=0.00003, inference=False):
     conv9_1 = layers.Conv2D(128, (1, 1), activation=activation, padding='same', kernel_regularizer=l2(reg),
                             kernel_initializer=initializer, name='conv9_1')(RESNET.output)
     conv9_2 = layers.Conv2D(256, (3, 3), strides=(2, 2), activation=activation, padding='same', kernel_regularizer=l2(reg),
@@ -74,9 +76,9 @@ def ssd_model_300_resnet(num_classes=600, reg=0.00003):
 
     final = layers.Concatenate(axis=2)([confs, locs])
 
+    if inference:
+        anc = Anchorage(name='anchorage')(final)
+        final = anc
+
     model = Model(inputs=RESNET.input, output=[final])
-
-    for l in model.layers[:14]:
-        l.trainable = True
-
     return model
