@@ -276,5 +276,5 @@ def draw_many_bboxes(img, bboxes: np.array,
         label = [['']] * bboxes.shape[0]
 
     for row, label in zip(bboxes, label):
-        gca_axes = draw_bbox(img, row, gca_axes, label[0], color)
+        gca_axes = draw_bbox(img, row, gca_axes, label, color)
     return gca_axes
