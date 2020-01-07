@@ -21,7 +21,7 @@ class CenterToCornerEncoder():
                               axis=-1)
 
 
-def upper_left(v):
+def upper_left(v: np.array) -> (np.array, np.array):
     """upper_left
     finds the lower right position based on an array cointaing in
     each row four values:
