@@ -2,7 +2,7 @@ import numpy as np
 
 
 class CenterToCornerEncoder():
-    def transform(self, bboxes: np.array) -> (np.array, np.array):
+    def transform(self, bboxes: np.array) -> np.array:
         """transform
         based on a matrix with each row defined as [cx,cy,w,h] this encoder
         transforms to a new matrix with [y0,x0,y1,x1]
