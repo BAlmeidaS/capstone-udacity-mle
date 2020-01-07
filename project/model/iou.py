@@ -1,6 +1,26 @@
 import numpy as np
 
 
+class CenterToCornerEncoder():
+    def transform(self, bboxes: np.array) -> (np.array, np.array):
+        """transform
+        based on a matrix with each row defined as [cx,cy,w,h] this encoder
+        transforms to a new matrix with [y0,x0,y1,x1]
+
+        Args:
+            v (np.array): each row [cx, cy, w, h] of a point
+
+        Returns:
+            np.array: each row[y0, x0, y1, x1]
+        """
+
+        return np.concatenate([np.expand_dims(upper_left(bboxes)[1], axis=-1),
+                               np.expand_dims(upper_left(bboxes)[0], axis=-1),
+                               np.expand_dims(lower_right(bboxes)[1], axis=-1),
+                               np.expand_dims(lower_right(bboxes)[0], axis=-1)],
+                              axis=-1)
+
+
 def upper_left(v):
     """upper_left
     finds the lower right position based on an array cointaing in
