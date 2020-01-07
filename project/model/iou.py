@@ -20,6 +20,28 @@ class CenterToCornerEncoder():
                                np.expand_dims(lower_right(bboxes)[0], axis=-1)],
                               axis=-1)
 
+    def inverse_transform(self, bboxes: np.array) -> np.array:
+        """transform
+        based on a matrix with each row defined as [y0,x0,y1,x1] this encoder
+        transforms to a new matrix with [cx,cy,w,h]
+
+        Args:
+            v (np.array): each row [y0, x0, y1, x1] of a point
+
+        Returns:
+            np.array: each row[cx, cy, w, h]
+        """
+        h = bboxes[:, 2] - bboxes[:, 0]
+        w = bboxes[:, 3] - bboxes[:, 1]
+        cy = bboxes[:, 0] + h / 2
+        cx = bboxes[:, 1] + w / 2
+
+        return np.concatenate([np.expand_dims(cx, axis=-1),
+                               np.expand_dims(cy, axis=-1),
+                               np.expand_dims(w, axis=-1),
+                               np.expand_dims(h, axis=-1)],
+                              axis=-1)
+
 
 def upper_left(v: np.array) -> (np.array, np.array):
     """upper_left
