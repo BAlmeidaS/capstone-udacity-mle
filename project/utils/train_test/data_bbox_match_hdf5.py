@@ -1,7 +1,7 @@
 # imports
 import os
 
-import pandas as pd
+import numpy as np
 
 import project.download_content as content
 
@@ -9,8 +9,6 @@ from project.utils import data
 from project.utils.data_bbox_match_hdf5 import load_ohc
 
 from tqdm import tqdm
-
-import pickle
 
 tqdm.pandas()
 modelpath = os.path.join(content.DATAPATH, "MODEL")
@@ -20,14 +18,26 @@ def process_data(data, prefix):
     # loading one hot encode created previously
     ohc = load_ohc()
 
-    # removing useless prefix
-    data = data.join(pd.DataFrame(ohc.transform(data[['LabelSemantic']]),
-                                  columns=[c[3:] for c in ohc.get_feature_names()]))
+    # get one hot encode for each class
+    encoded = ohc.transform(np.expand_dims(data['LabelSemantic'].values,
+                                           axis=-1))
+    # get the column id (position) of each row
+    ref_ids = np.argmax(encoded, axis=1)
 
-    all_cols = ['ImageID', 'LabelName', 'IsOccluded', 'IsTruncated', 'IsGroupOf',
-                'IsDepiction', 'IsInside', 'Path', 'LabelSemantic', 'cx', 'cy',
-                'w', 'h'] + data.columns[19:].tolist()
-    data = data[all_cols]
+    # increase one to match with the scruct (NOCLASS, class1, class2, ...)
+    class_ids = ref_ids + 1
+
+    data['LabelID'] = class_ids
+    data['Path'] = data.Path.apply(lambda x: "project/" + x[3:])
+
+    # # removing useless prefix
+    # data = data.join(pd.DataFrame(ohc.transform(data[['LabelSemantic']]),
+    #                               columns=[c[3:] for c in ohc.get_feature_names()]))
+
+    # all_cols = ['ImageID', 'LabelName', 'IsOccluded', 'IsTruncated', 'IsGroupOf',
+    #             'IsDepiction', 'IsInside', 'Path', 'LabelSemantic', 'cx', 'cy',
+    #             'w', 'h'] + data.columns[19:].tolist()
+    # data = data[all_cols]
 
     filepath = os.path.join(content.DATAPATH, "MODEL", f"{prefix}_data_preprocessed.h5")
 
