@@ -30,15 +30,6 @@ def process_data(data, prefix):
     data['LabelID'] = class_ids
     data['Path'] = data.Path.apply(lambda x: "project/" + x[3:])
 
-    # # removing useless prefix
-    # data = data.join(pd.DataFrame(ohc.transform(data[['LabelSemantic']]),
-    #                               columns=[c[3:] for c in ohc.get_feature_names()]))
-
-    # all_cols = ['ImageID', 'LabelName', 'IsOccluded', 'IsTruncated', 'IsGroupOf',
-    #             'IsDepiction', 'IsInside', 'Path', 'LabelSemantic', 'cx', 'cy',
-    #             'w', 'h'] + data.columns[19:].tolist()
-    # data = data[all_cols]
-
     filepath = os.path.join(content.DATAPATH, "MODEL", f"{prefix}_data_preprocessed.h5")
 
     data.to_hdf(filepath, key='X', mode='w')
