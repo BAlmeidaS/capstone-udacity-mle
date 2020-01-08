@@ -6,6 +6,7 @@ import pandas as pd
 import project.download_content as content
 
 from project.utils import data
+from project.utils.data_bbox_match_hdf5 import load_ohc
 
 from tqdm import tqdm
 
@@ -15,16 +16,9 @@ tqdm.pandas()
 modelpath = os.path.join(content.DATAPATH, "MODEL")
 
 
-def load_model():
-    with open(os.path.join(modelpath, 'ohc.pkl'), 'rb') as f:
-        ohc = pickle.load(f)
-
-    return ohc
-
-
 def process_data(data, prefix):
     # loading one hot encode created previously
-    ohc = load_model()
+    ohc = load_ohc()
 
     # removing useless prefix
     data = data.join(pd.DataFrame(ohc.transform(data[['LabelSemantic']]),
