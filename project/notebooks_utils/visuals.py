@@ -273,7 +273,10 @@ def draw_many_bboxes(img, bboxes: np.array,
                      color: str = "#00ffff") -> SubplotBase:
     """Use the center, width and height to draw the bounding box"""
     if label is None:
-        label = [['']] * bboxes.shape[0]
+        label = [""] * bboxes.shape[0]
+
+    if isinstance(label, str):
+        label = [label] * bboxes.shape[0]
 
     for row, label in zip(bboxes, label):
         gca_axes = draw_bbox(img, row, gca_axes, label, color)
