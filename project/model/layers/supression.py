@@ -69,80 +69,25 @@ class Suppression(layers.Layer):
         super().__init__(**kwargs)
 
     def _top_k(self, data, k):
-        def top():
-            _, ids = tf.math.top_k(data[..., 1], k=k)
-            return tf.gather(params=data, indices=ids, axis=0)
-        return top
-
-    def _pad_k(self, data, k):
-        def pad():
-            return tf.pad(data,
-                          [[0, k - tf.shape(data)[0]], [0, 0]],
-                          constant_values=0.0)
-        return pad
+        _, ids = tf.math.top_k(data[..., 1], k=k)
+        return tf.gather(params=data, indices=ids, axis=0)
 
     def call(self, inputs):
-        centroids = CenterToCornerEncoder.transform(inputs)
+        extended = tf.expand_dims(inputs, axis=-2)
 
-        def filter_predictions(batch_item):
-            mask = batch_item[..., :] > self.conf_threshold
+        bboxes, scores, classes, _ = tf.image.combined_non_max_suppression(
+            extended[..., -4:],
+            inputs[:, :, 1:-4],
+            self.nns_k,
+            self.k,
+            iou_threshold=self.iou_threshold,
+            score_threshold=self.conf_threshold,
+        )
 
-            def filter_by_class(i):
-                class_thresold = tf.boolean_mask(batch_item, mask[..., i])
+        # adjusting class reference - class=0 is 'NoClass'
+        classes = classes + 1
 
-                def suppresion():
-                    identifier = tf.fill((tf.shape(class_thresold)[0], 1),
-                                         tf.dtypes.cast(i, tf.float32))
-
-                    preds = tf.concat([identifier,
-                                       tf.gather(class_thresold,
-                                                 [i, 600, 601, 602, 603],
-                                                 axis=-1)],
-                                      axis=-1)
-
-                    suppression_ids = tf.image.non_max_suppression(
-                        preds[..., -4:],
-                        preds[..., 1],
-                        max_output_size=self.nns_k,
-                        iou_threshold=self.iou_threshold)
-
-                    return tf.gather(preds, suppression_ids, axis=0)
-
-                def empty():
-                    return tf.constant(value=0.0, shape=(1, 6))
-
-                relevants = tf.cond(tf.greater(tf.size(class_thresold), 0),
-                                    suppresion,
-                                    empty)
-
-                return tf.cond(tf.greater_equal(tf.shape(relevants)[0],
-                                                self.nns_k),
-                               self._top_k(relevants, self.nns_k),
-                               self._pad_k(relevants, self.nns_k))
-
-            class_filter = tf.map_fn(fn=filter_by_class,
-                                     elems=tf.range(1, 600),
-                                     dtype=tf.float32,
-                                     parallel_iterations=256,
-                                     back_prop=False,
-                                     swap_memory=False,
-                                     infer_shape=True,
-                                     name='loop_over_classes')
-
-            results = tf.reshape(tensor=class_filter, shape=(-1, 6))
-
-            top_results = tf.cond(tf.greater_equal(tf.shape(results)[0], self.k),
-                                  self._top_k(results, self.k),
-                                  self._pad_k(results, self.k))
-
-            return top_results
-
-        result = tf.map_fn(fn=filter_predictions,
-                           elems=centroids,
-                           dtype=None,
-                           parallel_iterations=256,
-                           back_prop=False,
-                           swap_memory=False,
-                           infer_shape=True,
-                           name='loop_over_batch')
-        return CenterToCornerEncoder.inverse_transform(result)
+        return tf.concat([tf.expand_dims(classes, axis=-1),
+                          tf.expand_dims(scores, axis=-1),
+                          bboxes],
+                         axis=-1)
