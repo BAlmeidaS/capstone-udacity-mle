@@ -6,6 +6,9 @@ from keras.regularizers import l2
 
 from keras import layers
 
+from project.model.layers.anchorage import Anchorage
+from project.model.layers.supression import Suppression
+
 VGG = VGG16(weights='imagenet', include_top=False, input_shape=(300, 300, 3))
 BASE_MODEL = Model(inputs=VGG.input, outputs=VGG.get_layer('block5_conv3').output)
 
@@ -15,7 +18,7 @@ initializer = RandomUniform(minval=-1e-2, maxval=1e-2)
 activation = 'relu'
 
 
-def ssd_model_300_vgg(num_classes=600, reg=0.00003):
+def ssd_model_300_vgg(num_classes=600, reg=0.00003, inference=True):
     conv4_3 = layers.ZeroPadding2D(padding=((0, 1), (0, 1)), name='conv4_3_padding')(BASE_MODEL.layers[-5].output)
 
     pool4 = layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='same', name='pool4')(conv4_3)
@@ -100,6 +103,10 @@ def ssd_model_300_vgg(num_classes=600, reg=0.00003):
                                                           rconf_5, rconf_6])
 
     final = layers.Concatenate(axis=2)([confs, locs])
+
+    if inference:
+        anc = Anchorage(name='anchorage')(final)
+        final = Suppression(name='suppresion')(anc)
 
     model = Model(inputs=BASE_MODEL.input, output=[final])
 
