@@ -6,6 +6,9 @@ from keras.regularizers import l2
 
 from keras import layers
 
+from project.model.layers.anchorage import Anchorage
+from project.model.layers.supression import Suppression
+
 xception = Xception(weights='imagenet', include_top=False, input_shape=(300, 300, 3))
 
 initializer = RandomUniform(minval=-1e-2, maxval=1e-2)
@@ -13,7 +16,7 @@ initializer = RandomUniform(minval=-1e-2, maxval=1e-2)
 activation = 'relu'
 
 
-def ssd_model_300_xception(num_classes=600, reg=0.00003):
+def ssd_model_300_xception(num_classes=600, reg=0.00003, inference=True):
     padding = layers.ZeroPadding2D(padding=((0, 1), (0, 1)),
                                    name='conv4_3_padding')(xception.layers[-101].output)
 
@@ -77,9 +80,9 @@ def ssd_model_300_xception(num_classes=600, reg=0.00003):
 
     final = layers.Concatenate(axis=2)([confs, locs])
 
+    if inference:
+        anc = Anchorage(name='anchorage')(final)
+        final = Suppression(name='suppresion')(anc)
+
     model = Model(inputs=xception.input, output=[final])
-
-    for l in model.layers[:14]:
-        l.trainable = True
-
     return model
