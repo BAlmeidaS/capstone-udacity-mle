@@ -1,5 +1,6 @@
 # Machine Learning Engineer Nanodegree
 
+link for the capstone PDF: https://github.com/BAlmeidaS/capstone-udacity-mle/blob/master/capstone/bruno-almeida-capstone.pdf
 ## Installing requirements
 `pip install -r requirements.txt` This command is going to install all libraries used in this project. It is extremely recommended that you run it in an virtual environment, avoiding to install this libraries in your global python. Python used in this project is *Python 3.7.4*
 
