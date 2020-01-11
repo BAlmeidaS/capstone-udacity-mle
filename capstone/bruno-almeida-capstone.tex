@@ -241,7 +241,20 @@ The second one is data augmentation. Because this dataset is hugely unbalanced, 
 4th level - 3rd level + nine slight zooms in the image
 5th level - 4th level + nine large zooms in the image
 
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=0.5\textwidth]{original-img.png}
+	\caption{\scriptsize Original Image with anchors (red) and original bboxes (blue)}
+	\label{original}
+\end{figure}
+
 The SSD paper proposes the image flips and the zooms to augment the data. However, the saturation and contrast changes was an approach inspired by much reading on data augmentation process. By transforming the image with the contrast and saturation, the hypothesis was that the neural network would have different conditions to identify the objects. 
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=0.5\textwidth]{flip-data-aug.png}
+	\caption{\scriptsize Flip Image (data augmentation) with anchors (red) and original bboxes (blue)}
+\end{figure}
 
 The third and last process is data selection to train. The initial train dataset contains more than 1.7 million images, with more than 14 million bounding boxes. After data augmentation, this training dataset reaches 2.7 million images with more than 23 millions bounding boxes, which is more balanced, but it is enormous. This project created a subset of train dataset trying to preserve the proportions of the more balanced data, but making it possible to train each epoch in the available time. The flow followed in selecting this data is described next. The train augmented dataset was divided into batches (around 50 images each), and by analysing them, the top 650 ones that contained the most balanced dataset were chosen.
 
@@ -252,6 +265,13 @@ All these processes comprehend many steps, and they are available in the GitHub.
 SSD is a technique which incorporates in the VGG16 a capability to find bounding boxes. To do so, it uses the concept of the convolutional layers. In the paper, they propose to remove the fully connected and final layers (which classifies the image overall) and to plug a new architecture. This architecture takes the last feature maps and applies into them a sequence of convolutions (actually, a set of two convolutions, which I am going to describe as a convolutional set). Each convolutional set reduces the features map and passes it to the next level. Also, it is used to predict an object in each kernel application of the present convolutional layer. Given that each set reduces the feature map, it increases for the next ones the length of the possible bounding box that could be predicted. So in the first levels of this architecture, the network predicts smaller bounding boxes, and in the final levels, the network predicts bigger bounding boxes.
 
 For each kernel application, we also define some forms of bounding boxes, changing the proportion of the width and size based on the kernel. The paper defines these "default bounding boxes" as Anchors.
+
+\begin{figure*}[!ht]
+	\centering
+	\includegraphics[width=0.9\textwidth]{xception+ssd.jpg}
+	\caption{\scriptsize Final Model - SSD + Xception}
+	\label{architecture}
+\end{figure*}
 
 All kernels are squares, with 3x3 pixels of the feature map, and depending on the level there are 4 or 6 anchors inside this kernel. Two of them are squares with the proportion of height per width equals 1. The other two consider the proportion of height and width equals 2 and 1/2. And for the case of 6 anchors, another 2 proportions of height and width equals 3 and 1/3 are considered. With an input image with 300x300 pixels, the SSD predicts 8732 bounding boxes (one for each Anchor defined).
 
@@ -273,7 +293,7 @@ In the Evaluation Section are the metrics collected in the cross-validation data
 
 To understand Xception, we have to understand depthwise separable convolution, which is simply the concept of a channel-wise spatial convolution (which is a convolution not only in the feature map but among the channels) concatenated with a 1x1 convolution called pointwise convolution. These 1x1 convolutions could be understood as a type of pooling over the channels, and they intend to reduce the number of channels. The Xception proposes to revert the order of the depthwise convolution with the 1x1 convolution. The main argument is that this reduces the weights of the model considerably with the same accuracy.
 
-The following image illustrates what this project implements, plugging the first architecture proposed in the final three sets of depthwise-pointwise.
+\ref{architecture} illustrates what this project implements, plugging the first architecture proposed in Xception with its depthwise-pointwise.
 
 \section{Results}
 
@@ -282,15 +302,42 @@ The following image illustrates what this project implements, plugging the first
 
 To the final results, many models were trained. All of them followed the same pattern, they used the partial train dataset created, the 35k images (650 batches of 50 images), and they were evaluated in the cross-validation dataset. The hyper-parameters used to train the models were: the amount of epoch was 30, with a batch size of 24, SGD (Stochastic Gradient Descent) as the optimizer, with momentum of 0.9, decay of 0.0005 and a learning rate scheduler that uses $10^-3$ in first 15 epochs, $10^-4$ in the epochs 16 to 25, and $10^-5$ in the last five epochs.
 
-This work presents the best four models created with this evaluation model. The cross-validation dataset has 570 classes, in the following table are the mAP achieved for each model, I also considered the weighted mAP, which is the weighted mean AP, and the weights are the amount of the bounding boxes of each class. The weighted mAP is calculated because the dataset is very unbalanced.
+This work presents the best four models created with this evaluation model. The cross-validation dataset has 570 classes, table \ref{crossval1} are the mAP achieved for each model, I also considered the weighted mAP, which is the weighted mean AP, and the weights are the amount of the bounding boxes of each class. The weighted mAP is calculated because the dataset is very unbalanced.
 
-[TABELA]
+% Please add the following required packages to your document preamble:
+% \usepackage[table,xcdraw]{xcolor}
+% If you use beamer only pass "xcolor=table" option, i.e. \documentclass[xcolor=table]{beamer}
+\begin{table}[!ht]
+	\begin{tabular}{lll}
+		\rowcolor[HTML]{EFEFEF} 
+		Architectures & Common & Weighted \\
+		VGG16+SSD     & 0.0012 & 0.0002   \\
+		\rowcolor[HTML]{EFEFEF} 
+		Mobilenet+SSD & 0.0036 & 0.0020   \\
+		\rowcolor[HTML]{FFFFFF} 
+		Resnet+SSD    & 0.0091 & 0.0308   \\
+		\rowcolor[HTML]{EFEFEF} 
+		Xception+SSD  & 0.0174 & 0.1199  
+	\end{tabular}
+	\caption{mAP and weighted mAP for each final model}
+	\label{crossval1}
+\end{table}
 
-The two best architectures, Resnet50 and Xception, were reloaded with the weights obtained and retrained for more 30 epochs. And the following table shows the final results in the cross-validation.
+The two best architectures, Resnet50 and Xception, were reloaded with the weights obtained and retrained for more 30 epochs. And the table \ref{crossval2} shows the final results in the cross-validation.
 
-[TABELA2]
+\begin{table}[!ht]
+	\begin{tabular}{lll}
+		\rowcolor[HTML]{EFEFEF} 
+		Architectures & Common & Weighted \\
+		Resnet+SSD v2 & 0.0067 & 0.0353   \\
+		\rowcolor[HTML]{EFEFEF} 
+		Xception+SSD v2 & 0.0229 & 0.1788
+		\label{crossval2}
+	\end{tabular}
+	\caption{mAP and weighted mAP for the final two trained with more 30 epochs}
+\end{table}
 
-With this evaluation, Xception + SSD is the best one, and the evaluation of the model in the test set is:
+According to the evaluation made on cross-validation the xception architecture with the SSD is the best model. A final evaluation in test set is made and REF show the final metric.
 
 \subsection{Justification}
 
@@ -304,51 +351,104 @@ It is not recommended to use a model with this mAP on a critical system, like se
 
 \section{Conclusion}
 \subsection{Free-Form Visualization}
+
+As mentioned, the main challenge of the project is the unbalanced data. In this notebook, I demonstrated the criteria of the data augmentation. A good visualization that emphasis the distribution before and after data augmentation are \ref{augincreased} and \ref{aug2}. The raw data has a more skewed distribution and clearly the data augmentation helped to fixed that as much as it could, the impact in the final model is expressive because of that.
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=0.5\textwidth]{data-aug2.png}
+	\label{aug2}
+	\caption{Count amount of distribution for each class}
+\end{figure}
+
+The data augmentation itself is also a great part of the project. All the code to do the transformation are tailor-made and they could be found in github. More examples of data augmentation made for \ref{original} are \ref{aug1plus} and \ref{aug2plus} applying zoom and control saturation.
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=0.4\textwidth]{aug-plus1.png}
+	\caption{Zoom in data augmentation, transforming also the bounding boxes}
+	\label{aug1plus}
+\end{figure}
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=0.4\textwidth]{aug-plus2.png}
+	\caption{An example of saturation change}
+	\label{aug2plus}
+\end{figure}
+
+\begin{figure*}[ht]
+	\centering
+	\includegraphics[width=0.9\textwidth]{data-aug1.png}
+	\caption{Amount of data before/after data augmentation}
+	\label{augincreased}
+\end{figure*}
+
 \subsection{Reflection}
+
+In the very end, the final results are far from the top 50's Kaggle submissions, even the weighted mAP in the Xception with SSD.
+
+The first reason is that the area of computer vision and object detection have a massive amount of knowledge and papers to read, and I am a rookie person is this area yet.
+
+Another point that must be mentioned is the volume of data. The data is massive, and the impact of that is it needs many computer resources. To achieve these results, I created a lot of intermediates preprocess data, but also I filtered and removed a lot of data trying to evaluate and iterate faster. In the very end, I had 2.5 terabytes of hard drive used on my machine.
+
+The final models were trained with a few parts of the dataset, around 35000 images (650 batches with approximately 50~55 images per batch). However, each one trained with 30 epochs spent more than 30 hours in Geforce 1080TI with 11Gb GDDR6. It is possible to estimate that this same train in the CPU would spend more than 120 hours.
+
+More than one model was created. And each model created, each design proposed, each concept tested to fully understand the Networks consumed resources and time. It was three months on this project, and if I could, I would spend three more months improving it (and I probably will). To deliver a result in the due date, I decided on a strategy and followed it until the end.
+
+Even the low score, I am very proud of this work. All code was designed by me and can be found in my Github, and a lot of knowledge from object detection to TensorFlow 2.0 and Keras was learnt.
+
 \subsection{Improvement}
 
+As previously stated, the dataset provided in the Kaggle competition is very unbalanced. This project used data augmentation technique to reduce this problem. However, there is plenty of room for more improvements in this aspect. The dataset has some flags, discussed in the data exploration section. These flags describe images that have objects with obstruction, images that are related to groups of objects and even images that are depictions, for example, a statue as a depiction of a human body. During the selection of the data to compose the subset for training the networks, these flags can be used to guarantee a more balanced data. The impact of this in the model would be better predictions since the network is trained with more data for the classes that have fewer bounding boxes.
+
+Another improvement would be running the training process for more epochs. In this project, the models trained with a maximum of 60 epochs, because the time is limited. Though, the SSD paper proposes around 200 epochs. This improvement would impact directly on the mAP metric, increasing how much the model learned to predict.
+
+Last, but not least, as discussed before, there are other types of Convolutional Neural Networks. YOLO can be used to attempt to solve the problem. It uses an entirely different architecture but could be a compelling approach to compare YOLO and SSD using this dataset since the papers related to this project compare them using much smaller datasets. The idea behind this change in the architecture would be increasing the object detections in the images as well.
+
+\clearpage
 \bibliographystyle{unsrt}
 \bibliography{references.bib}{}
 
 \begin{appendices}
-	\section {Class hierarchy}
 	\label{sec:appendix-a}
+	\section {Class hierarchy}
 	
-	\begin{figure*}[ht]
+	\begin{figure*}[!ht]
 		\centering
 		\includegraphics[width=0.7\textwidth]{lvl1_classes.png}
 		\caption{\scriptsize Class Hierarchy - First Level}
 	\end{figure*}
 	
-	\begin{figure}[ht]
+	\begin{figure}[!ht]
 		\centering
-		\includegraphics[width=0.8\textwidth]{lvl2_classes_pt1.png}
+		\includegraphics[width=0.7\textwidth]{lvl2_classes_pt1.png}
 		\caption{\scriptsize Class Hierarchy - Second Level first part}
 	\end{figure}
-	\begin{figure*}[ht]
+	\begin{figure*}[!ht]
 		\centering
-		\includegraphics[width=0.8\textwidth]{lvl2_classes_pt2.png}
+		\includegraphics[width=0.7\textwidth]{lvl2_classes_pt2.png}
 		\caption{\scriptsize Class Hierarchy - Second Level second part}
 	\end{figure*}
 	
-	\begin{figure*}[ht]
+	\begin{figure*}[!ht]
 		\centering
 		\includegraphics[width=0.8\textwidth]{lvl3_classes_pt1.png}
 		\caption{\scriptsize Class Hierarchy - Third Level first part}
 	\end{figure*}
-	\begin{figure*}[ht]
+	\begin{figure*}[!ht]
 		\centering
 		\includegraphics[width=0.8\textwidth]{lvl3_classes_pt2.png}
 		\caption{\scriptsize Class Hierarchy - Third Level second part}
 	\end{figure*}
 	
-	\begin{figure*}[ht]
+	\begin{figure*}[!ht]
 		\centering
 		\includegraphics[width=0.8\textwidth]{lvl4_classes.png}
 		\caption{\scriptsize Class Hierarchy - Fourth Level}
 	\end{figure*}
 	
-	\begin{figure*}[ht]
+	\begin{figure*}[!ht]
 		\centering
 		\includegraphics[width=0.8\textwidth]{lvl5_classes.png}
 		\caption{\scriptsize Class Hierarchy - Fifth Level}
