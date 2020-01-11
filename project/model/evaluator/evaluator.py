@@ -50,7 +50,7 @@ class Evaluator():
     def load_images(self, label_id):
         images = []
 
-        with h5py.File(os.path.join(MODELPATH, 'cross_val', f'{label_id}.h5'), mode='r') as f:
+        with h5py.File(os.path.join(MODELPATH, 'test', f'{label_id}.h5'), mode='r') as f:
             images_ids = list(f.keys())
             for k in images_ids:
                 images.append(f[k][:])
