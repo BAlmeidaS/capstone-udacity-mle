@@ -67,7 +67,7 @@ jupyter-core==4.6.1
 jupyter-highlight-selected-word==0.2.0
 jupyter-latex-envs==1.4.6
 jupyter-nbextensions-configurator==0.4.1
-jupyterlab==1.2.3
+jupyterlab==1.2.21
 jupyterlab-code-formatter==0.7.0
 jupyterlab-discovery==5.1.2
 jupyterlab-server==1.0.6
