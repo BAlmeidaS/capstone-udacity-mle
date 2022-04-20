@@ -25,7 +25,7 @@ dash-renderer==1.2.1
 dash-table==4.5.1
 decorator==4.4.1
 defusedxml==0.6.0
-distributed==2.8.1
+distributed==2021.10.0
 entrypoints==0.3
 fasteners==0.15
 ffmpeg==1.4
