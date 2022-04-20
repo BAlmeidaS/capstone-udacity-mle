@@ -5,7 +5,7 @@ atomicwrites==1.3.0
 attrs==19.3.0
 autopep8==1.4.4
 backcall==0.1.0
-bleach==3.1.0
+bleach==3.1.4
 bokeh==1.4.0
 box2d-py==2.3.8
 cachetools==3.1.1
@@ -92,7 +92,7 @@ mtcnn==0.1.0
 nbconvert==5.6.1
 nbformat==4.4.0
 networkx==2.4
-notebook==6.0.2
+notebook==6.1.5
 numba==0.46.0
 numexpr==2.7.0
 numpy==1.17.4
@@ -114,7 +114,7 @@ pluggy==0.13.1
 prometheus-client==0.7.1
 prompt-toolkit==2.0.10
 protobuf==3.10.0
-psutil==5.6.5
+psutil==5.6.6
 ptyprocess==0.6.0
 py==1.8.0
 py-d3==0.3.0
@@ -129,7 +129,7 @@ pyrsistent==0.15.5
 pytest==5.3.0
 python-dateutil==2.8.1
 pytz==2019.3
-PyYAML==5.1.2
+PyYAML==5.4
 pyzmq==18.1.1
 qtconsole==4.6.0
 ray==0.7.3
@@ -151,7 +151,7 @@ tb-nightly==2.1.0a20191016
 tblib==1.5.0
 tensorboard==2.0.1
 tensorflow-estimator==2.0.1
-tensorflow-gpu==2.0.0
+tensorflow-gpu==2.3.1
 termcolor==1.1.0
 terminado==0.8.3
 testpath==0.4.4
